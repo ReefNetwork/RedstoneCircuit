@@ -9,5 +9,12 @@
     }
   ],
   "require": {
-  }
+    "pocketmine/pocketmine-mp": "4.*"
+  },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/pmmp/PocketMine-MP.git"
+    }
+  ]
 }

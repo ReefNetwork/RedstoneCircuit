@@ -299,7 +299,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
             for($i = 1; $i <= 2; ++$i){
                 if($matches[$i][$k] !== ""){
                     $arg = $i === 1 ? stripslashes($matches[$i][$k]) : $matches[$i][$k];
-                    if ($i !== 1 && $arg === "@p" && ($p = $this->nearPlayer()) instanceof Player) {
+                    if ($k !== 0 && $arg === "@p" && ($p = $this->nearPlayer()) instanceof Player) {
                         $args[$k] = $p->getName();
                     } else {
                         $args[$k] = $arg;
@@ -338,7 +338,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
             $this->sendMessage(KnownTranslationFactory::pocketmine_command_notFound($sentCommandLabel ?? "", "/help")->prefix(TextFormat::RED));
         }
 
-        return $successful;
+        return $successful === true;
     }
 
     public function getCustomName(): string {

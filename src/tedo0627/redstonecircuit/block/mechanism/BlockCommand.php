@@ -11,6 +11,7 @@ use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\command\CommandSender;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
+use pocketmine\entity\Human;
 use pocketmine\item\Item;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\lang\Language;
@@ -252,25 +253,52 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
         $block->chain($blockIndex);
     }
 
+    protected function nearPlayer(): ?Player
+    {
+        $p = $this->getPosition()->getWorld()->getNearestEntity($this->getPosition(),99,Human::class);
+        if ($p instanceof Player) {
+            return $p;
+        }
+        return null;
+    }
+
     protected function dispatch(): bool {
         $args = [];
         preg_match_all('/"((?:\\\\.|[^\\\\"])*)"|(\S+)/u', $this->getCommand(), $matches);
         foreach($matches[0] as $k => $_){
             for($i = 1; $i <= 2; ++$i){
                 if($matches[$i][$k] !== ""){
-                    $args[$k] = $i === 1 ? stripslashes($matches[$i][$k]) : $matches[$i][$k];
+                    $arg = $i === 1 ? stripslashes($matches[$i][$k]) : $matches[$i][$k];
+                    if ($i !== 1 && $arg === "@p" && ($p = $this->nearPlayer()) instanceof Player) {
+                        $args[$k] = $p->getName();
+                    } else {
+                        $args[$k] = $arg;
+                    }
                     break;
                 }
             }
         }
 
         $successful = false;
+        $skip = false;
+        $sender = $this;
         $sentCommandLabel = array_shift($args);
-        if($sentCommandLabel !== null && ($target = Server::getInstance()->getCommandMap()->getCommand($sentCommandLabel)) !== null){
+        if ($sentCommandLabel === "@p") {
+            $p = $this->nearPlayer();
+            if ($p instanceof Player) {
+                $sender = $p;
+            } else {
+                $this->sendMessage("プレイヤーが見つかりません");
+                $skip = true;
+            }
+            $sentCommandLabel = array_shift($args);
+        }
+
+        if(!$skip && $sentCommandLabel !== null && ($target = Server::getInstance()->getCommandMap()->getCommand($sentCommandLabel)) !== null){
             $target->timings->startTiming();
 
             try{
-                $successful = $target->execute($this, $sentCommandLabel, $args);
+                $successful = $target->execute($sender, $sentCommandLabel, $args);
             }catch(InvalidCommandSyntaxException $e){
                 $this->sendMessage($this->getLanguage()->translate(KnownTranslationFactory::commands_generic_usage($target->getUsage())));
             }finally{

@@ -338,7 +338,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
             $this->sendMessage(KnownTranslationFactory::pocketmine_command_notFound($sentCommandLabel ?? "", "/help")->prefix(TextFormat::RED));
         }
 
-        return $successful;
+        return $successful === true;
     }
 
     public function getCustomName(): string {

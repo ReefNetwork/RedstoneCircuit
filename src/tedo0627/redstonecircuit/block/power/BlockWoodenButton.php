@@ -2,7 +2,6 @@
 
 namespace tedo0627\redstonecircuit\block\power;
 
-use pocketmine\block\Block;
 use pocketmine\block\WoodenButton;
 use pocketmine\entity\Entity;
 use pocketmine\entity\projectile\Arrow;
@@ -11,31 +10,25 @@ use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\FlowablePlaceHelper;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILinkRedstoneWire {
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (!FlowablePlaceHelper::checkSurface($this, Facing::opposite($face))) return false;
-        return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
-    }
-
-    public function onNearbyBlockChange(): void {
-        if (FlowablePlaceHelper::checkSurface($this, Facing::opposite($this->getFacing()))) return;
-        $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
-    }
-
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
         if ($this->isPressed()) return true;
 
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
+            $event->call();
+        }
         parent::onInteract($item, $face, $clickVector, $player);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
         return true;
@@ -49,6 +42,10 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
             if ($entities[$i] instanceof Arrow) return;
         }
 
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
+            $event->call();
+        }
         parent::onScheduledUpdate();
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
     }
@@ -70,6 +67,10 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
         if ($this->isPressed()) return true;
 
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
+            $event->call();
+        }
         $this->setPressed(true);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));

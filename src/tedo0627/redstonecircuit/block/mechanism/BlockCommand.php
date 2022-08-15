@@ -12,12 +12,18 @@ use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\command\CommandSender;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
 use pocketmine\entity\Human;
+use pocketmine\event\server\CommandEvent;
 use pocketmine\item\Item;
 use pocketmine\lang\KnownTranslationFactory;
 use pocketmine\lang\Language;
 use pocketmine\lang\Translatable;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
+use pocketmine\network\mcpe\InventoryManager;
+use pocketmine\network\mcpe\protocol\ContainerOpenPacket;
+use pocketmine\network\mcpe\protocol\types\BlockPosition;
+use pocketmine\network\mcpe\protocol\types\inventory\ContainerIds;
+use pocketmine\network\mcpe\protocol\types\inventory\WindowTypes;
 use pocketmine\permission\DefaultPermissions;
 use pocketmine\permission\PermissibleBase;
 use pocketmine\permission\PermissibleDelegateTrait;
@@ -31,6 +37,8 @@ use tedo0627\redstonecircuit\block\CommandBlockTrait;
 use tedo0627\redstonecircuit\block\entity\BlockEntityCommand;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
     use AnyFacingTrait;
@@ -134,9 +142,17 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
         if (!$player->isCreative()) return true;
         if (!Server::getInstance()->isOp($player->getName())) return true;
 
-        $inventory = $tile->getInventory();
-        if ($inventory === $player->getCurrentWindow()) $player->removeCurrentWindow();
-        $player->setCurrentWindow($inventory);
+        $inventoryManager = $player->getNetworkSession()->getInvManager();
+
+        $reflection = new \ReflectionClass(InventoryManager::class);
+        $property = $reflection->getProperty("lastInventoryNetworkId");
+        $property->setAccessible(true);
+        $value = $property->getValue($inventoryManager);
+        $value = max(ContainerIds::FIRST, ($value + 1) % ContainerIds::LAST);
+        $property->setValue($inventoryManager, $value);
+
+        $pk = ContainerOpenPacket::blockInv($value, WindowTypes::COMMAND_BLOCK, BlockPosition::fromVector3($this->getPosition()));
+        $player->getNetworkSession()->sendDataPacket($pk);
         return true;
     }
 
@@ -172,9 +188,18 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
     }
 
     public function onRedstoneUpdate(): void {
-        $power = BlockPowerHelper::isPowered($this);
-        if ($power && !$this->isPowered()) {
-            $this->setPowered(true);
+        $powered = BlockPowerHelper::isPowered($this);
+        if ($powered === $this->isPowered()) return;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
+            $event->call();
+            $powered = $event->getNewPowered();
+            if ($powered === $this->isPowered()) return;
+        }
+
+        $this->setPowered($powered);
+        if ($powered) {
             $mode = $this->getCommandBlockMode();
             if ($mode === BlockCommand::REPEATING) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
 
@@ -188,13 +213,9 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
             } else {
                 $this->delay();
             }
-            return;
+        } else {
+            $this->writeStateToWorld();
         }
-
-        if ($power || !$this->isPowered()) return;
-
-        $this->setPowered(false);
-        $this->writeStateToWorld();
     }
 
     protected function delay(): void {
@@ -263,8 +284,17 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
     }
 
     protected function dispatch(): bool {
+        $command = $this->getCommand();
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new CommandEvent($this, $command);
+            $event->call();
+            if ($event->isCancelled()) return false;
+
+            $command = $event->getCommand();
+        }
+
         $args = [];
-        preg_match_all('/"((?:\\\\.|[^\\\\"])*)"|(\S+)/u', $this->getCommand(), $matches);
+        preg_match_all('/"((?:\\\\.|[^\\\\"])*)"|(\S+)/u', $command, $matches);
         foreach($matches[0] as $k => $_){
             for($i = 1; $i <= 2; ++$i){
                 if($matches[$i][$k] !== ""){
@@ -301,14 +331,14 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
                 $successful = $target->execute($sender, $sentCommandLabel, $args);
             }catch(InvalidCommandSyntaxException $e){
                 $this->sendMessage($this->getLanguage()->translate(KnownTranslationFactory::commands_generic_usage($target->getUsage())));
-            }finally{
+            } finally {
                 $target->timings->stopTiming();
             }
         } else {
             $this->sendMessage(KnownTranslationFactory::pocketmine_command_notFound($sentCommandLabel ?? "", "/help")->prefix(TextFormat::RED));
         }
 
-        return $successful === true;
+        return $successful;
     }
 
     public function getCustomName(): string {

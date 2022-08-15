@@ -3,31 +3,26 @@
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Block;
+use pocketmine\block\utils\SupportType;
 use pocketmine\block\WeightedPressurePlateHeavy;
 use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
-use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\RedstonePowerOffSound;
 use pocketmine\world\sound\RedstonePowerOnSound;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\FlowablePlaceHelper;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockWeightedPressurePlateHeavy extends WeightedPressurePlateHeavy implements IRedstoneComponent, ILinkRedstoneWire {
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
-
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (!FlowablePlaceHelper::check($this, Facing::DOWN)) return false;
-        return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
-    }
 
     public function onBreak(Item $item, ?Player $player = null): bool {
         parent::onBreak($item, $player);
@@ -36,7 +31,7 @@ class BlockWeightedPressurePlateHeavy extends WeightedPressurePlateHeavy impleme
     }
 
     public function onNearbyBlockChange(): void {
-        if (FlowablePlaceHelper::check($this, Facing::DOWN)) return;
+        if ($this->canBeSupportedBy($this->getSide(Facing::DOWN))) return;
         $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
     }
 
@@ -49,8 +44,16 @@ class BlockWeightedPressurePlateHeavy extends WeightedPressurePlateHeavy impleme
             $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 20);
         }
 
+        $oldPower = $this->getOutputSignalStrength();
         $power = min((int) (($count + 9) / 10), 15);
-        if ($this->getOutputSignalStrength() === $power) return;
+        if ($oldPower === $power) return;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstoneSignalUpdateEvent($this, $power, $oldPower);
+            $event->call();
+            $power = $event->getNewSignal();
+            if ($oldPower === $power) return;
+        }
 
         if ($power === 0) {
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOffSound());
@@ -65,10 +68,19 @@ class BlockWeightedPressurePlateHeavy extends WeightedPressurePlateHeavy impleme
         $count = count($entities);
         if ($count <= 0) return true;
 
-        if ($this->getOutputSignalStrength() === 0) {
+        $oldPower = $this->getOutputSignalStrength();
+        $power = min((int) (($count + 9) / 10), 15);
+        if ($oldPower !== $power && RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstoneSignalUpdateEvent($this, $power, $oldPower);
+            $event->call();
+            $power = $event->getNewSignal();
+            if ($oldPower === $power) return true;
+        }
+
+        if ($oldPower === 0) {
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOnSound());
         }
-        $this->setOutputSignalStrength(min((int) (($count + 9) / 10), 15));
+        $this->setOutputSignalStrength($power);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 10);
@@ -100,5 +112,9 @@ class BlockWeightedPressurePlateHeavy extends WeightedPressurePlateHeavy impleme
 
     public function isPowerSource(): bool {
         return $this->getOutputSignalStrength() > 0;
+    }
+
+    private function canBeSupportedBy(Block $block): bool {
+        return !$block->getSupportType(Facing::UP)->equals(SupportType::NONE());
     }
 }

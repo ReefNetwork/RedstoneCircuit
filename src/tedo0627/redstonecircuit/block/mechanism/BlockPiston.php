@@ -19,12 +19,16 @@ use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
 use tedo0627\redstonecircuit\block\entity\BlockEntityPistonArm;
+use tedo0627\redstonecircuit\block\entity\IgnorePiston;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\PistonResolver;
 use tedo0627\redstonecircuit\block\PistonTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockPistonExtendEvent;
+use tedo0627\redstonecircuit\event\BlockPistonRetractEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\PistonInSound;
 use tedo0627\redstonecircuit\sound\PistonOutSound;
 
@@ -135,6 +139,12 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $resolver->resolve();
             if (!$resolver->isSuccess()) return false;
 
+            if (RedstoneCircuit::isCallEvent()) {
+                $event = new BlockPistonExtendEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
+                $event->call();
+                if ($event->isCancelled()) return false;
+            }
+
             $world = $this->getPosition()->getWorld();
             foreach ($resolver->getBreakBlocks() as $block) {
                 $this->addBreakBlock($block);
@@ -146,9 +156,11 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 $this->addAttachedBlock($side);
                 $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
                 $tile = $world->getTile($block->getPosition());
+                if ($tile instanceof IgnorePiston) $tile = null;
                 if ($moving instanceof BlockMoving) $moving->setMovingBlock($block, $tile);
                 $world->setBlock($side->getPosition(), $moving);
                 $world->setBlock($block->getPosition(), VanillaBlocks::AIR());
+                BlockUpdateHelper::updateAroundRedstone($block);
             }
             $this->setState(1);
             $side = $this->getSide($face);
@@ -207,6 +219,12 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $resolver->resolve();
             if (!$resolver->isSuccess()) return false;
 
+            if (RedstoneCircuit::isCallEvent()) {
+                $event = new BlockPistonRetractEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
+                $event->call();
+                if ($event->isCancelled()) return false;
+            }
+
             $world = $this->getPosition()->getWorld();
             foreach ($resolver->getBreakBlocks() as $block) {
                 $this->addBreakBlock($block);
@@ -218,9 +236,11 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 $this->addAttachedBlock($side);
                 $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
                 $tile = $world->getTile($block->getPosition());
+                if ($tile instanceof IgnorePiston) $tile = null;
                 if ($moving instanceof BlockMoving) $moving->setMovingBlock($block, $tile);
                 $world->setBlock($side->getPosition(), $moving);
                 $world->setBlock($block->getPosition(), VanillaBlocks::AIR());
+                BlockUpdateHelper::updateAroundRedstone($block);
             }
             $this->setState(3);
         } else if ($state === 3) {

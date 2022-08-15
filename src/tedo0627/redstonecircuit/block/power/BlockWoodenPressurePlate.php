@@ -3,31 +3,26 @@
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Block;
+use pocketmine\block\utils\SupportType;
 use pocketmine\block\WoodenPressurePlate;
 use pocketmine\entity\Entity;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
-use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\RedstonePowerOffSound;
 use pocketmine\world\sound\RedstonePowerOnSound;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\FlowablePlaceHelper;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockWoodenPressurePlate extends WoodenPressurePlate implements IRedstoneComponent, ILinkRedstoneWire {
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
-
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (!FlowablePlaceHelper::check($this, Facing::DOWN)) return false;
-        return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
-    }
 
     public function onBreak(Item $item, ?Player $player = null): bool {
         parent::onBreak($item, $player);
@@ -36,7 +31,7 @@ class BlockWoodenPressurePlate extends WoodenPressurePlate implements IRedstoneC
     }
 
     public function onNearbyBlockChange(): void {
-        if (FlowablePlaceHelper::check($this, Facing::DOWN)) return;
+        if ($this->canBeSupportedBy($this->getSide(Facing::DOWN))) return;
         $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
     }
 
@@ -49,7 +44,13 @@ class BlockWoodenPressurePlate extends WoodenPressurePlate implements IRedstoneC
             return;
         }
 
-        $this->setPressed(false);
+        $pressed = false;
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, false, $this->isPressed());
+            $event->call();
+            $pressed = $event->getNewPowered();
+        }
+        $this->setPressed($pressed);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOffSound());
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
@@ -60,7 +61,13 @@ class BlockWoodenPressurePlate extends WoodenPressurePlate implements IRedstoneC
         if (count($entities) <= 0) return true;
 
         if (!$this->isPressed()) {
-            $this->setPressed(true);
+            $pressed = true;
+            if (RedstoneCircuit::isCallEvent()) {
+                $event = new BlockRedstonePowerUpdateEvent($this, true, $this->isPressed());
+                $event->call();
+                $pressed = $event->getNewPowered();
+            }
+            $this->setPressed($pressed);
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOnSound());
             BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
@@ -94,5 +101,9 @@ class BlockWoodenPressurePlate extends WoodenPressurePlate implements IRedstoneC
 
     public function isPowerSource(): bool {
         return $this->isPressed();
+    }
+
+    private function canBeSupportedBy(Block $block): bool {
+        return !$block->getSupportType(Facing::UP)->equals(SupportType::NONE());
     }
 }

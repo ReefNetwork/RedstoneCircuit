@@ -41,10 +41,10 @@ use tedo0627\redstonecircuit\block\mechanism\BlockMoving;
 use tedo0627\redstonecircuit\block\mechanism\BlockNote;
 use tedo0627\redstonecircuit\block\mechanism\BlockPiston;
 use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
-use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
 use tedo0627\redstonecircuit\block\mechanism\BlockPoweredRail;
 use tedo0627\redstonecircuit\block\mechanism\BlockRedstoneLamp;
 use tedo0627\redstonecircuit\block\mechanism\BlockSkull;
+use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
 use tedo0627\redstonecircuit\block\mechanism\BlockStickyPistonArmCollision;
 use tedo0627\redstonecircuit\block\mechanism\BlockTNT;
 use tedo0627\redstonecircuit\block\mechanism\BlockWoodenDoor;
@@ -77,6 +77,8 @@ use tedo0627\redstonecircuit\loader\ItemBlockLoader;
 use tedo0627\redstonecircuit\loader\Loader;
 
 class RedstoneCircuit extends PluginBase {
+
+    private static bool $callEvent = false;
 
     /** @var Loader[] */
     private array $loader = [];
@@ -197,6 +199,8 @@ class RedstoneCircuit extends PluginBase {
         $this->getServer()->getPluginManager()->registerEvents(new CommandBlockListener(), $this);
         $this->getServer()->getPluginManager()->registerEvents(new InventoryListener(), $this);
         $this->getServer()->getPluginManager()->registerEvents(new TargetBlockListener(), $this);
+
+        self::$callEvent = $this->getConfig()->get("event", false);
     }
 
     private function overrideBlock(string $name, int $id, Closure $callback, ?string $class = null): void {
@@ -231,8 +235,6 @@ class RedstoneCircuit extends PluginBase {
         $mapping = RuntimeBlockMapping::getInstance();
         $update = $mapping->toRuntimeId(Ids::INFO_UPDATE << Block::INTERNAL_METADATA_BITS);
         $table = BlockTable::getInstance();
-        $idCheck = -1;
-        $damage = 0;
         $method = new ReflectionMethod(RuntimeBlockMapping::class, "registerMapping");
         $method->setAccessible(true);
         foreach ($mapping->getBedrockKnownStates() as $runtimeId => $tag) {
@@ -240,19 +242,15 @@ class RedstoneCircuit extends PluginBase {
             if (!$table->existsId($name)) continue;
 
             $id = $table->getId($name);
-            if ($idCheck === $id) {
-                if (str_contains($name, "button") && $damage == 5) {
-                    $damage = 8;
-                } else {
-                    $damage++;
-                }
-            } else {
-                $damage = 0;
-                $idCheck = $id;
-            }
+            $states = $tag->getCompoundTag("states");
+            $damage = $table->getDamage($id, $states);
             if ($mapping->toRuntimeId(($id << Block::INTERNAL_METADATA_BITS) | $damage) !== $update) continue;
 
             $method->invoke($mapping, $runtimeId, $id, $damage);
         }
+    }
+
+    public static function isCallEvent(): bool {
+        return self::$callEvent;
     }
 }

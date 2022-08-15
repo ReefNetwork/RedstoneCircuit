@@ -2,6 +2,7 @@
 
 namespace tedo0627\redstonecircuit\block\mechanism;
 
+use InvalidArgumentException;
 use pocketmine\block\Block;
 use pocketmine\block\BlockBreakInfo;
 use pocketmine\block\BlockIdentifier;
@@ -15,6 +16,7 @@ use pocketmine\entity\projectile\Arrow;
 use pocketmine\entity\projectile\Egg;
 use pocketmine\entity\projectile\ExperienceBottle;
 use pocketmine\entity\projectile\Snowball;
+use pocketmine\entity\projectile\SplashPotion;
 use pocketmine\item\Item;
 use pocketmine\item\ItemFactory;
 use pocketmine\item\ItemIds;
@@ -23,6 +25,7 @@ use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\ClickSound;
+use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\dispenser\ArmorDispenseBehavior;
 use tedo0627\redstonecircuit\block\dispenser\BoneMealDispenseBehavior;
@@ -37,18 +40,20 @@ use tedo0627\redstonecircuit\block\dispenser\TNTDispenseBehavior;
 use tedo0627\redstonecircuit\block\entity\BlockEntityDispenser;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockDispenseEvent;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\ClickFailSound;
 
 class BlockDispenser extends Opaque implements IRedstoneComponent {
     use AnyFacingTrait;
+    use BlockEntityInitializeTrait;
     use PoweredByRedstoneTrait;
     use RedstoneComponentTrait;
 
     protected static bool $init = false;
     protected static DispenseItemBehavior $default;
-    /**
-     * @var DispenseItemBehavior[]
-     */
+    /** @var DispenseItemBehavior[] */
     protected static array $behaviors = [];
 
     public function __construct(BlockIdentifier $idInfo, string $name, BlockBreakInfo $breakInfo) {
@@ -64,6 +69,21 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
     public function readStateFromData(int $id, int $stateMeta): void {
         $this->setFacing(BlockDataSerializer::readFacing($stateMeta & 0x07));
         $this->setPowered(($stateMeta & 0x08) !== 0);
+    }
+
+    public function readStateFromWorld(): void {
+        parent::readStateFromWorld();
+        $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
+        if($tile instanceof BlockEntityDispenser) {
+            $this->setInitialized($tile->isInitialized());
+        }
+    }
+
+    public function writeStateToWorld(): void {
+        parent::writeStateToWorld();
+        $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
+        assert($tile instanceof BlockEntityDispenser);
+        $tile->setInitialized($this->isInitialized());
     }
 
     public function getStateBitmask(): int {
@@ -102,6 +122,12 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
     }
 
     public function onScheduledUpdate(): void {
+        if (!$this->isInitialized()) {
+            $this->setInitialized(true);
+            $this->writeStateToWorld();
+            return;
+        }
+
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
         if (!$tile instanceof BlockEntityDispenser) return;
 
@@ -113,6 +139,12 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
         }
 
         $item = $inventory->getItem($slot);
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockDispenseEvent($this, clone $item);
+            $event->call();
+            if ($event->isCancelled()) return;
+        }
+
         $result = $this->dispense($item);
         $inventory->setItem($slot, $item);
         if ($result !== null) $inventory->addItem($result);
@@ -121,17 +153,18 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
 
     public function onRedstoneUpdate(): void {
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered && !$this->isPowered()) {
-            $this->setPowered(true);
-            $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-            $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
-            return;
+        if ($powered === $this->isPowered()) return;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
+            $event->call();
+            $powered = $event->getNewPowered();
+            if ($powered === $this->isPowered()) return;
         }
 
-        if ($powered || !$this->isPowered()) return;
-
-        $this->setPowered(false);
+        $this->setPowered($powered);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
+        if ($powered) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
     }
 
     public function dispense(Item $item): ?Item {
@@ -167,6 +200,12 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
         self::$behaviors[ItemIds::EXPERIENCE_BOTTLE] = new class extends ProjectileDispenseBehavior {
             public function getEntity(Location $location, Item $item): Entity {
                 return new ExperienceBottle($location, null);
+            }
+        };
+        self::$behaviors[ItemIds::SPLASH_POTION] = new class extends ProjectileDispenseBehavior {
+            public function getEntity(Location $location, Item $item): Entity {
+                if (!$item instanceof \pocketmine\item\SplashPotion) throw new InvalidArgumentException("item was not SplashPotion");
+                return new SplashPotion($location, null, $item->getType());
             }
         };
         self::$behaviors[ItemIds::BUCKET] = new BucketDispenseBehavior();

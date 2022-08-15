@@ -2,30 +2,24 @@
 
 namespace tedo0627\redstonecircuit\block\transmission;
 
-use pocketmine\block\Block;
 use pocketmine\block\RedstoneWire;
 use pocketmine\block\Slab;
 use pocketmine\block\Stair;
 use pocketmine\block\utils\SlabType;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\item\Item;
 use pocketmine\math\Facing;
-use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\FlowablePlaceHelper;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockRedstoneWire extends RedstoneWire implements IRedstoneComponent, ILinkRedstoneWire {
     use RedstoneComponentTrait;
-
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (!FlowablePlaceHelper::check($this, Facing::DOWN)) return false;
-        return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
-    }
 
     public function onPostPlace(): void {
         $this->calculatePower();
@@ -38,12 +32,11 @@ class BlockRedstoneWire extends RedstoneWire implements IRedstoneComponent, ILin
     }
 
     public function onNearbyBlockChange(): void {
-        if (FlowablePlaceHelper::check($this, Facing::DOWN)) {
-            if ($this->calculatePower()) return;
-            BlockUpdateHelper::updateAroundStrongRedstone($this);
-        } else {
-            $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
-        }
+        parent::onNearbyBlockChange();
+
+        if ($this->getPosition()->getWorld()->getBlock($this->getPosition()) === VanillaBlocks::AIR()) return;
+        if ($this->calculatePower()) return;
+        BlockUpdateHelper::updateAroundStrongRedstone($this);
     }
 
     public function getStrongPower(int $face): int {
@@ -131,6 +124,14 @@ class BlockRedstoneWire extends RedstoneWire implements IRedstoneComponent, ILin
         }
 
         if ($this->getOutputSignalStrength() == $power) return false;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstoneSignalUpdateEvent($this, $power, $this->getOutputSignalStrength());
+            $event->call();
+
+            $power = $event->getNewSignal();
+            if ($this->getOutputSignalStrength() == $power) return false;
+        }
 
         $this->setOutputSignalStrength($power);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);

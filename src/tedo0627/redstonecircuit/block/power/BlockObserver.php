@@ -12,19 +12,23 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
+use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
 use tedo0627\redstonecircuit\block\entity\BlockEntityObserver;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneWire {
     use AnyFacingTrait;
+    use BlockEntityInitializeTrait;
     use PoweredByRedstoneTrait;
     use RedstoneComponentTrait;
 
-    protected int $blockId = 0;
-    protected int $stateMeta = 0;
+    protected int $blockId = -1;
+    protected int $stateMeta = -1;
 
     protected function writeStateToMeta(): int {
         return BlockDataSerializer::writeFacing($this->facing) |
@@ -42,6 +46,7 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         if($tile instanceof BlockEntityObserver) {
             $this->setSideBlockId($tile->getBlockId());
             $this->setSideStateMeta($tile->getStateMeta());
+            $this->setInitialized($tile->isInitialized());
         }
     }
 
@@ -51,6 +56,7 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         assert($tile instanceof BlockEntityObserver);
         $tile->setBlockId($this->getSideBlockId());
         $tile->setStateMeta($this->getSideStateMeta());
+        $tile->setInitialized($this->isInitialized());
     }
 
     public function getStateBitmask(): int {
@@ -83,24 +89,34 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         $block = $this->getSide($this->getFacing());
         $id = $block->getId();
         $state = $block->getMeta();
+
         if ($this->getSideBlockId() === $id && $this->getSideStateMeta() === $state) return;
 
         $this->setSideBlockId($id);
         $this->setSideStateMeta($state);
-        $pos = $this->getPosition();
-        $world = $pos->getWorld();
-        $world->setBlock($pos, $this);
-        $world->scheduleDelayedBlockUpdate($pos, 2);
+        $this->setInitialized(true);
+        $this->writeStateToWorld();
+        $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 2);
     }
 
     public function onScheduledUpdate(): void {
-        $this->setPowered(!$this->isPowered());
-        $pos = $this->getPosition();
-        $world = $pos->getWorld();
-        $world->setBlock($pos, $this);
+        if (!$this->isInitialized()) {
+            $this->setInitialized(true);
+            $this->writeStateToWorld();
+            return;
+        }
+
+        $powered = !$this->isPowered();
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, $powered, !$powered);
+            $event->call();
+            $powered = $event->getNewPowered();
+        }
+        $this->setPowered($powered);
+        $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
 
-        if ($this->isPowered()) $world->scheduleDelayedBlockUpdate($pos, 2);
+        if ($this->isPowered()) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
     }
 
     public function getSideBlockId(): int {

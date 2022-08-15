@@ -3,8 +3,8 @@
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Hopper;
-use pocketmine\block\Jukebox as BlockJukebox;
 use pocketmine\block\inventory\FurnaceInventory;
+use pocketmine\block\Jukebox as BlockJukebox;
 use pocketmine\block\tile\Container;
 use pocketmine\block\tile\Furnace;
 use pocketmine\block\tile\Jukebox;
@@ -18,6 +18,10 @@ use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\entity\BlockEntityHopper;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\event\HopperMoveItemEvent;
+use tedo0627\redstonecircuit\event\HopperPickupItemEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockHopper extends Hopper implements IRedstoneComponent {
     use RedstoneComponentTrait;
@@ -97,6 +101,12 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
             if ($targetBlock->getRecord() !== null) return false;
             if (!$pop instanceof Record) return false;
 
+            if (RedstoneCircuit::isCallEvent()) {
+                $event = new HopperMoveItemEvent($this, $inventory, $targetBlock, clone $pop);
+                $event->call();
+                if ($event->isCancelled()) return false;
+            }
+
             $targetBlock->insertRecord($pop);
             $targetBlock->writeStateToWorld();
             $inventory->setItem($slot, $item);
@@ -127,6 +137,12 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         }
 
         if (!$targetInventory->canAddItem($pop)) return false;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new HopperMoveItemEvent($this, $inventory, $targetInventory, clone $pop);
+            $event->call();
+            if ($event->isCancelled()) return false;
+        }
 
         $targetInventory->addItem($pop);
         $inventory->setItem($slot, $item);
@@ -177,6 +193,12 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         $inventory = $hopper->getInventory();
         if (!$inventory->canAddItem($pop)) return false;
 
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new HopperMoveItemEvent($this, $sourceInventory, $inventory, clone $pop);
+            $event->call();
+            if ($event->isCancelled()) return false;
+        }
+
         $inventory->addItem($pop);
         $sourceInventory->setItem($slot, $item);
         return true;
@@ -195,10 +217,23 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
             $entity = $entities[$i];
             if (!$entity instanceof ItemEntity) continue;
 
-            $source = $entity->getItem();
-            $cant = $inventory->addItem($source);
-            $source->setCount(count($cant) === 0 ? 0 : $cant[0]->getCount());
-            if ($source->getCount() === 0) $entity->flagForDespawn();
+            $source = clone $entity->getItem();
+            $count = $inventory->getAddableItemQuantity($source);
+            if ($count === 0) continue;
+
+            $pop = $source->pop($count);
+            if (RedstoneCircuit::isCallEvent()) {
+                $event = new HopperPickupItemEvent($this, $inventory, $entity, clone $pop);
+                $event->call();
+                if ($event->isCancelled()) continue;
+            }
+
+            $inventory->addItem($pop);
+            if ($source->getCount() === 0) {
+                $entity->flagForDespawn();
+            } else {
+                $entity->getItem()->pop($count);
+            }
             $check = true;
         }
         return $check;
@@ -206,15 +241,16 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
 
     public function onRedstoneUpdate(): void {
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered && !$this->isPowered()) {
-            $this->setPowered(true);
-            $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-            return;
+        if ($powered === $this->isPowered()) return;
+
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
+            $event->call();
+            $powered = $event->getNewPowered();
+            if ($powered === $this->isPowered()) return;
         }
 
-        if ($powered || !$this->isPowered()) return;
-
-        $this->setPowered(false);
+        $this->setPowered($powered);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
     }
 

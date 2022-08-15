@@ -2,28 +2,19 @@
 
 namespace tedo0627\redstonecircuit\block\transmission;
 
-use pocketmine\block\Block;
 use pocketmine\block\RedstoneRepeater;
 use pocketmine\item\Item;
 use pocketmine\math\Facing;
-use pocketmine\math\Vector3;
 use pocketmine\player\Player;
-use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\FlowablePlaceHelper;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\IRedstoneDiode;
+use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
+use tedo0627\redstonecircuit\RedstoneCircuit;
 
 class BlockRedstoneRepeater extends RedstoneRepeater implements IRedstoneComponent, ILinkRedstoneWire, IRedstoneDiode {
-
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (!FlowablePlaceHelper::check($this, Facing::DOWN)) return false;
-        if ($player != null) $this->setFacing(Facing::opposite($player->getHorizontalFacing()));
-        $tx->addBlock($blockReplace->getPosition(), $this);
-        return true;
-    }
 
     public function onPostPlace(): void {
         $this->onRedstoneUpdate();
@@ -35,31 +26,23 @@ class BlockRedstoneRepeater extends RedstoneRepeater implements IRedstoneCompone
         return true;
     }
 
-    public function onNearbyBlockChange(): void {
-        if (FlowablePlaceHelper::check($this, Facing::DOWN)) {
-            BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
-        } else {
-            $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
-        }
-    }
-
     public function onScheduledUpdate(): void {
         if ($this->isLocked()) return;
 
-        $powered = $this->isPowered();
         $side = BlockPowerHelper::isSidePowered($this, $this->getFacing());
-        if ($powered) {
-            $this->setPowered(false);
-            $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-            BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
-            return;
-        }
 
-        $this->setPowered(true);
+        $oldPowered = $this->isPowered();
+        $powered = !$oldPowered;
+        if (RedstoneCircuit::isCallEvent()) {
+            $event = new BlockRedstonePowerUpdateEvent($this, $powered, $oldPowered);
+            $event->call();
+
+            $powered = $event->getNewPowered();
+        }
+        $this->setPowered($powered);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
-
-        if (!$side) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), $this->getDelay() * 2);
+        if (!$oldPowered &&!$side) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), $this->getDelay() * 2);
     }
 
     public function isLocked(): bool {

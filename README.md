@@ -1,10 +1,11 @@
 [![](https://poggit.pmmp.io/shield.state/RedstoneCircuit)](https://poggit.pmmp.io/p/RedstoneCircuit)
 [![](https://poggit.pmmp.io/shield.dl.total/RedstoneCircuit)](https://poggit.pmmp.io/p/RedstoneCircuit)
+[![](https://img.shields.io/github/downloads/tedo0627/RedstoneCircuit/total)]()
 <h1>RedstoneCircuit<img width=100 align="left" src="https://github.com/tedo0627/RedstoneCircuit/blob/master/icon.png?raw=true"></h1>
 
 This is the PocketMine plugin that implements the Redstone circuit.
 
-### Implemented Blocks
+## Implemented Blocks
 <details>
   <summary>
     transmission
@@ -59,6 +60,18 @@ This is the PocketMine plugin that implements the Redstone circuit.
     <li>Trapdoors
   </ul>
 </details>
+
+## Custom Events
+When using custom events, they must be enabled in the configuration.
+|name|description|
+|:-------|:-----|
+|BlockDispenseEvent|Called when the item is dispense|
+|BlockPistonExtendEvent|Called when the piston is extended|
+|BlockPistonRetractEvent|Called when the piston retracted|
+|BlockRedstonePowerUpdateEvent|Called when the redstone signal is turned on or off|
+|BlockRedstoneSignalUpdateEvent|Called when the redstone power changes|
+|HopperMoveItemEvent|Called when the hopper moves an item|
+|HopperPickupItemEvent|Called when the hopper picks up an item|
 
 ## License
 "Redstone Circuit" is under [GPL-3.0 License](https://github.com/tedo0627/RedstoneCircuit/blob/master/LICENSE)

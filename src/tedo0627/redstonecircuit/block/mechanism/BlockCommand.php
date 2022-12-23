@@ -276,7 +276,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent, CommandSender {
 
     protected function nearPlayer(): ?Player
     {
-        $p = $this->getPosition()->getWorld()->getNearestEntity($this->getPosition(),99,Human::class);
+        $p = $this->getPosition()->getWorld()->getNearestEntity($this->getPosition(),5,Human::class);
         if ($p instanceof Player) {
             return $p;
         }

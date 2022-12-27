@@ -1,5 +1,13 @@
 {
   "name": "tedo0627/RedstoneCircuit",
+  "description": "description",
+  "license": "GNU",
+  "authors": [
+    {
+      "name": "tedo0627",
+      "email": "email@example.com"
+    }
+  ],
   "require": {
     "pocketmine/pocketmine-mp": "4.*"
   },

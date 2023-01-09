@@ -87,11 +87,6 @@ class BlockTable {
         }
     }
 
-    public function registerBlock(string $name, int $id): void {
-        $this->idToName[$id] = $name;
-        $this->nameToId[$name] = $id;
-    }
-
     public function existsName(int $id): bool {
         return array_key_exists($id, $this->idToName);
     }

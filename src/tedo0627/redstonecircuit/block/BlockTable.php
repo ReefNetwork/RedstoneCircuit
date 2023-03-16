@@ -12,6 +12,7 @@ use pocketmine\utils\SingletonTrait;
 use pocketmine\utils\Utils;
 use Webmozart\PathUtil\Path;
 use const pocketmine\BEDROCK_DATA_PATH;
+use const pocketmine\PATH;
 
 class BlockTable {
     use SingletonTrait;
@@ -27,7 +28,7 @@ class BlockTable {
     private array $idToStateToDamage = [];
 
     public function __construct() {
-        $json = json_decode(file_get_contents(BEDROCK_DATA_PATH . "block_id_map.json"), true);
+        $json = json_decode(file_get_contents(PATH . "vendor/pocketmine/bedrock-block-upgrade-schema/block_legacy_id_map.json"), true);
         foreach ($json as $name => $id) {
             // pistonArmCollision -> piston_arm_collision
             if (str_contains(strtolower($name), "piston")) {

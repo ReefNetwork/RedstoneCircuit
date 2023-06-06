@@ -5,7 +5,6 @@ namespace tedo0627\redstonecircuit\tile;
 use pocketmine\block\tile\Nameable;
 use pocketmine\block\tile\NameableTrait;
 use pocketmine\block\tile\Spawnable;
-use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
 use pocketmine\event\server\CommandEvent;
 use pocketmine\inventory\CallbackInventoryListener;
@@ -25,12 +24,13 @@ use tedo0627\redstonecircuit\block\CommandBlockTrait;
 use tedo0627\redstonecircuit\block\CommandBlockType;
 use tedo0627\redstonecircuit\block\inventory\CommandInventory;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
+use tedo0627\redstonecircuit\block\utils\AnyFacingOppositePlayerTrait;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
 abstract class CommandBlock extends Spawnable implements Nameable{
     use NameableTrait;
     use CommandBlockTrait;
-    use PoweredByRedstoneTrait;
+	use AnyFacingOppositePlayerTrait;
 
     public CONST TAG_AUTO = "auto";
     public CONST TAG_COMMAND = "command";

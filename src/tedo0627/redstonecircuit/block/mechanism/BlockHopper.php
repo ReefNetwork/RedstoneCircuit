@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Hopper;
@@ -22,23 +24,25 @@ use tedo0627\redstonecircuit\event\HopperMoveItemEvent;
 use tedo0627\redstonecircuit\event\HopperPickupItemEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\tile\Hopper as HopperTile;
+use function assert;
+use function count;
 
-class BlockHopper extends Hopper implements IRedstoneComponent {
+class BlockHopper extends Hopper implements IRedstoneComponent{
     use RedstoneComponentTrait;
 
     private int $transferCooldown = 0;
     private int $tickedGameTime = 0;
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld() : \pocketmine\block\Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof HopperTile) return;
+        if(!$tile instanceof HopperTile) return;
 
         $this->setTransferCooldown($tile->getTransferCooldown());
         $this->setTickedGameTime($tile->getTickedGameTime());
     }
 
-    public function writeStateToWorld(): void {
+    public function writeStateToWorld() : void{
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
         assert($tile instanceof HopperTile);
@@ -46,65 +50,65 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         $tile->setTickedGameTime($this->getTickedGameTime());
     }
 
-    public function onScheduledUpdate(): void {
+    public function onScheduledUpdate() : void{
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
 
         $this->setTransferCooldown($this->getTransferCooldown() - 1);
         $this->setTickedGameTime(Server::getInstance()->getTick());
-        if (!$this->isPowered()) $this->suckEntity();
-        if ($this->getTransferCooldown() > 0) {
+        if(!$this->isPowered()) $this->suckEntity();
+        if($this->getTransferCooldown() > 0){
             $this->writeStateToWorld();
             return;
         }
 
         $this->setTransferCooldown(0);
-        if ($this->isPowered()) {
+        if($this->isPowered()){
             $this->writeStateToWorld();
             return;
         }
 
         $check = $this->ejectItem();
         $check |= $this->suckItem();
-        if ($check) $this->setTransferCooldown(8);
+        if($check) $this->setTransferCooldown(8);
         $this->writeStateToWorld();
     }
 
-    protected function ejectItem(): bool {
+    protected function ejectItem() : bool{
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof HopperTile) return false;
+        if(!$hopper instanceof HopperTile) return false;
 
         $target = $this->getPosition()->getWorld()->getTile($this->getSide($this->getFacing())->getPosition());
         $juke = $target instanceof Jukebox;
-        if (!$target instanceof Container && !$juke) return false;
+        if(!$target instanceof Container && !$juke) return false;
 
         $furnace = $target instanceof Furnace && $this->getFacing() !== Facing::DOWN;
 
         $inventory = $hopper->getInventory();
         $slot = null;
         $item = null;
-        for ($i = 0; $i < $inventory->getSize(); $i++) {
+        for($i = 0; $i < $inventory->getSize(); $i++){
             $ejectItem = $inventory->getItem($i);
-            if ($ejectItem->isNull()) continue;
-            if ($juke && !$ejectItem instanceof Record) continue;
-            if ($furnace && $ejectItem->getFuelTime() <= 0) continue;
+            if($ejectItem->isNull()) continue;
+            if($juke && !$ejectItem instanceof Record) continue;
+            if($furnace && $ejectItem->getFuelTime() <= 0) continue;
 
             $slot = $i;
             $item = $ejectItem;
             break;
         }
-        if ($slot === null) return false;
+        if($slot === null) return false;
 
         $pop = $item->pop();
-        if ($target instanceof Jukebox) {
+        if($target instanceof Jukebox){
             $targetBlock = $target->getBlock();
-            if (!$targetBlock instanceof BlockJukebox) return false;
-            if ($targetBlock->getRecord() !== null) return false;
-            if (!$pop instanceof Record) return false;
+            if(!$targetBlock instanceof BlockJukebox) return false;
+            if($targetBlock->getRecord() !== null) return false;
+            if(!$pop instanceof Record) return false;
 
-            if (RedstoneCircuit::isCallEvent()) {
+            if(RedstoneCircuit::isCallEvent()){
                 $event = new HopperMoveItemEvent($this, $inventory, $targetBlock, clone $pop);
                 $event->call();
-                if ($event->isCancelled()) return false;
+                if($event->isCancelled()) return false;
             }
 
             $targetBlock->insertRecord($pop);
@@ -114,19 +118,19 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         }
 
         $targetInventory = $target->getInventory();
-        if ($targetInventory instanceof FurnaceInventory) {
+        if($targetInventory instanceof FurnaceInventory){
             $targetSlot = $this->getFacing() === Facing::DOWN ? 0 : 1;
-            if ($targetSlot === 1 && $pop->getFuelTime() <= 0) return false;
+            if($targetSlot === 1 && $pop->getFuelTime() <= 0) return false;
 
             $targetItem = $targetInventory->getItem($targetSlot);
-            if ($targetItem->isNull()) {
+            if($targetItem->isNull()){
                 $targetInventory->setItem($targetSlot, $pop);
                 $inventory->setItem($slot, $item);
                 return true;
             }
 
             $count = $targetItem->getCount() + $pop->getCount();
-            if ($targetItem->canStackWith($pop) && $count <= $targetItem->getMaxStackSize()) {
+            if($targetItem->canStackWith($pop) && $count <= $targetItem->getMaxStackSize()){
                 $targetItem->setCount($count);
                 $targetInventory->setItem($targetSlot, $targetItem);
                 $inventory->setItem($slot, $item);
@@ -136,67 +140,67 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
             return false;
         }
 
-        if (!$targetInventory->canAddItem($pop)) return false;
+        if(!$targetInventory->canAddItem($pop)) return false;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new HopperMoveItemEvent($this, $inventory, $targetInventory, clone $pop);
             $event->call();
-            if ($event->isCancelled()) return false;
+            if($event->isCancelled()) return false;
         }
 
         $targetInventory->addItem($pop);
         $inventory->setItem($slot, $item);
 
         $block = $target->getBlock();
-        if (!$block instanceof BlockHopper) return true;
+        if(!$block instanceof BlockHopper) return true;
 
         $block->setTransferCooldown($block->getTickedGameTime() >= $this->getTickedGameTime() ? 7 : 8);
         $block->writeStateToWorld();
         return true;
     }
 
-    protected function suckItem(): bool {
+    protected function suckItem() : bool{
         $source = $this->getPosition()->getWorld()->getTile($this->getSide(Facing::UP)->getPosition());
-        if (!$source instanceof Container) return false;
+        if(!$source instanceof Container) return false;
 
         $sourceInventory = $source->getInventory();
         $slot = null;
         $item = null;
-        if ($sourceInventory instanceof FurnaceInventory) {
+        if($sourceInventory instanceof FurnaceInventory){
             $fuel = $sourceInventory->getFuel();
-            if ($fuel instanceof Bucket) {
+            if($fuel instanceof Bucket){
                 $slot = 1;
                 $item = $fuel;
-            } else {
+            }else{
                 $result = $sourceInventory->getResult();
-                if (!$result->isNull()) {
+                if(!$result->isNull()){
                     $slot = 2;
                     $item = $result;
                 }
             }
-        } else {
-            for ($i = 0; $i < $sourceInventory->getSize(); $i++) {
+        }else{
+            for($i = 0; $i < $sourceInventory->getSize(); $i++){
                 $suckItem = $sourceInventory->getItem($i);
-                if ($suckItem->isNull()) continue;
+                if($suckItem->isNull()) continue;
 
                 $slot = $i;
                 $item = $suckItem;
                 break;
             }
         }
-        if ($slot === null) return false;
+        if($slot === null) return false;
 
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof HopperTile) return false;
+        if(!$hopper instanceof HopperTile) return false;
 
         $pop = $item->pop();
         $inventory = $hopper->getInventory();
-        if (!$inventory->canAddItem($pop)) return false;
+        if(!$inventory->canAddItem($pop)) return false;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new HopperMoveItemEvent($this, $sourceInventory, $inventory, clone $pop);
             $event->call();
-            if ($event->isCancelled()) return false;
+            if($event->isCancelled()) return false;
         }
 
         $inventory->addItem($pop);
@@ -204,66 +208,66 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         return true;
     }
 
-    protected function suckEntity(): bool {
+    protected function suckEntity() : bool{
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof HopperTile) return false;
+        if(!$hopper instanceof HopperTile) return false;
 
         $inventory = $hopper->getInventory();
         $pos = $this->getPosition();
         $bb = new AxisAlignedBB($pos->getFloorX(), $pos->getFloorY() + 1, $pos->getFloorZ(), $pos->getFloorX() + 1, $pos->getFloorY() + 2, $pos->getFloorZ() + 1);
         $entities = $this->getPosition()->getWorld()->getNearbyEntities($bb);
         $check = false;
-        for ($i = 0; $i < count($entities); $i++) {
+        for($i = 0; $i < count($entities); $i++){
             $entity = $entities[$i];
-            if (!$entity instanceof ItemEntity) continue;
+            if(!$entity instanceof ItemEntity) continue;
 
             $source = clone $entity->getItem();
             $count = $inventory->getAddableItemQuantity($source);
-            if ($count === 0) continue;
+            if($count === 0) continue;
 
             $pop = $source->pop($count);
-            if (RedstoneCircuit::isCallEvent()) {
+            if(RedstoneCircuit::isCallEvent()){
                 $event = new HopperPickupItemEvent($this, $inventory, $entity, clone $pop);
                 $event->call();
-                if ($event->isCancelled()) continue;
+                if($event->isCancelled()) continue;
             }
 
             $inventory->addItem($pop);
             $entity->getItem()->pop($count);
-            if ($source->getCount() === 0) $entity->flagForDespawn();
+            if($source->getCount() === 0) $entity->flagForDespawn();
             $check = true;
         }
         return $check;
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered === $this->isPowered()) return;
+        if($powered === $this->isPowered()) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
             $event->call();
             $powered = $event->getNewPowered();
-            if ($powered === $this->isPowered()) return;
+            if($powered === $this->isPowered()) return;
         }
 
         $this->setPowered($powered);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
     }
 
-    public function getTransferCooldown(): int {
+    public function getTransferCooldown() : int{
         return $this->transferCooldown;
     }
 
-    public function setTransferCooldown(int $cooldown): void {
+    public function setTransferCooldown(int $cooldown) : void{
         $this->transferCooldown = $cooldown;
     }
 
-    public function getTickedGameTime(): int {
+    public function getTickedGameTime() : int{
         return $this->tickedGameTime;
     }
 
-    public function setTickedGameTime(int $tick): void {
+    public function setTickedGameTime(int $tick) : void{
         $this->tickedGameTime = $tick;
     }
 }

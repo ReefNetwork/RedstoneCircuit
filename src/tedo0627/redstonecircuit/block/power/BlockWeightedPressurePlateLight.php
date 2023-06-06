@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Block;
@@ -19,43 +21,45 @@ use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use function count;
+use function min;
 
-class BlockWeightedPressurePlateLight extends WeightedPressurePlateLight implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockWeightedPressurePlateLight extends WeightedPressurePlateLight implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
         return true;
     }
 
-    public function onNearbyBlockChange(): void {
-        if ($this->canBeSupportedBy($this->getSide(Facing::DOWN))) return;
+    public function onNearbyBlockChange() : void{
+        if($this->canBeSupportedBy($this->getSide(Facing::DOWN))) return;
         $this->getPosition()->getWorld()->useBreakOn($this->getPosition());
     }
 
-    public function onScheduledUpdate(): void {
-        if ($this->getOutputSignalStrength() === 0) return;
+    public function onScheduledUpdate() : void{
+        if($this->getOutputSignalStrength() === 0) return;
 
         $entities = $this->getPosition()->getWorld()->getNearbyEntities($this->getHitCollision());
         $count = count($entities);
-        if ($count !== 0) {
+        if($count !== 0){
             $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 20);
         }
 
         $oldPower = $this->getOutputSignalStrength();
         $power = min($count, 15);
-        if ($oldPower === $power) return;
+        if($oldPower === $power) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstoneSignalUpdateEvent($this, $power, $oldPower);
             $event->call();
             $power = $event->getNewSignal();
-            if ($oldPower === $power) return;
+            if($oldPower === $power) return;
         }
 
-        if ($power === 0) {
+        if($power === 0){
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOffSound());
         }
         $this->setOutputSignalStrength($power);
@@ -63,23 +67,23 @@ class BlockWeightedPressurePlateLight extends WeightedPressurePlateLight impleme
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
     }
 
-    public function onEntityInside(Entity $entity): bool {
-        if ($entity instanceof Player && $entity->isSpectator()) return true;
+    public function onEntityInside(Entity $entity) : bool{
+        if($entity instanceof Player && $entity->isSpectator()) return true;
 
         $entities = $this->getPosition()->getWorld()->getNearbyEntities($this->getHitCollision());
         $count = count($entities);
-        if ($count <= 0) return true;
+        if($count <= 0) return true;
 
         $oldPower = $this->getOutputSignalStrength();
         $power = min($count, 15);
-        if ($oldPower !== $power && RedstoneCircuit::isCallEvent()) {
+        if($oldPower !== $power && RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstoneSignalUpdateEvent($this, $power, $oldPower);
             $event->call();
             $power = $event->getNewSignal();
-            if ($oldPower === $power) return true;
+            if($oldPower === $power) return true;
         }
 
-        if ($oldPower === 0) {
+        if($oldPower === 0){
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new RedstonePowerOnSound());
         }
         $this->setOutputSignalStrength($power);
@@ -89,11 +93,11 @@ class BlockWeightedPressurePlateLight extends WeightedPressurePlateLight impleme
         return true;
     }
 
-    public function hasEntityCollision(): bool {
+    public function hasEntityCollision() : bool{
         return true;
     }
 
-    protected function getHitCollision(): AxisAlignedBB {
+    protected function getHitCollision() : AxisAlignedBB{
         return new AxisAlignedBB(
             $this->getPosition()->getX() + 0.0625,
             $this->getPosition()->getY(),
@@ -104,19 +108,19 @@ class BlockWeightedPressurePlateLight extends WeightedPressurePlateLight impleme
         );
     }
 
-    public function getStrongPower(int $face): int {
+    public function getStrongPower(int $face) : int{
         return $face == Facing::UP ? $this->getOutputSignalStrength() : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->getOutputSignalStrength();
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->getOutputSignalStrength() > 0;
     }
 
-    private function canBeSupportedBy(Block $block): bool {
+    private function canBeSupportedBy(Block $block) : bool{
         return !$block->getSupportType(Facing::UP)->equals(SupportType::NONE());
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\RedstoneTorch;
@@ -14,23 +16,23 @@ use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockRedstoneTorch extends RedstoneTorch implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockRedstoneTorch extends RedstoneTorch implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
 
-    public function onPostPlace(): void {
+    public function onPostPlace() : void{
         $this->onRedstoneUpdate();
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::UP);
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::UP);
         return true;
     }
 
-    public function onScheduledUpdate(): void {
+    public function onScheduledUpdate() : void{
         $lit = !$this->isLit();
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $lit, $lit);
             $event->call();
             $lit = $event->getNewPowered();
@@ -40,22 +42,22 @@ class BlockRedstoneTorch extends RedstoneTorch implements IRedstoneComponent, IL
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::UP);
     }
 
-    public function getStrongPower(int $face): int {
+    public function getStrongPower(int $face) : int{
         return $this->isLit() && $face === Facing::DOWN ? 15 : 0;
     }
 
-    public function getWeakPower(int $face): int {
-        if  (!$this->isLit()) return 0;
-        if ($face === Facing::DOWN) return $this->getFacing() !== Facing::DOWN ? 15 : 0;
+    public function getWeakPower(int $face) : int{
+        if(!$this->isLit()) return 0;
+        if($face === Facing::DOWN) return $this->getFacing() !== Facing::DOWN ? 15 : 0;
         return $face !== $this->getFacing() ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->isLit();
     }
 
-    public function onRedstoneUpdate(): void {
-        if (BlockPowerHelper::isSidePowered($this, Facing::opposite($this->getFacing())) !== $this->isLit()) return;
+    public function onRedstoneUpdate() : void{
+        if(BlockPowerHelper::isSidePowered($this, Facing::opposite($this->getFacing())) !== $this->isLit()) return;
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 2);
     }
 }

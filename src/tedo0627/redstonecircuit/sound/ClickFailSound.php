@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\sound;
 
 use pocketmine\math\Vector3;
@@ -7,7 +9,7 @@ use pocketmine\network\mcpe\protocol\LevelEventPacket;
 use pocketmine\network\mcpe\protocol\types\LevelEvent;
 use pocketmine\world\sound\Sound;
 
-class ClickFailSound implements Sound {
+class ClickFailSound implements Sound{
 
     private float $pitch;
 

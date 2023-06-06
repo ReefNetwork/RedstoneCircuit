@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\dispenser;
 
 use pocketmine\item\Item;
@@ -7,10 +9,11 @@ use pocketmine\math\Axis;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
+use function mt_rand;
 
-class DefaultItemDispenseBehavior implements DispenseItemBehavior {
+class DefaultItemDispenseBehavior implements DispenseItemBehavior{
 
-    public function dispense(BlockDispenser $block, Item $item): ?Item {
+    public function dispense(BlockDispenser $block, Item $item) : ?Item{
         $pos = $block->getPosition();
         $world = $pos->getWorld();
         $face = $block->getFacing();

@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block;
 
 /**
  * BlockEntity is load, schedule update is called, and therefore, a trait to avoid that update
  */
-trait BlockEntityInitializeTrait {
+trait BlockEntityInitializeTrait{
 
     protected bool $initialized = false;
 
-    public function isInitialized(): bool {
+    public function isInitialized() : bool{
         return $this->initialized;
     }
 
-    public function setInitialized(bool $initialize): void {
+    public function setInitialized(bool $initialize) : void{
         $this->initialized = $initialize;
     }
 }

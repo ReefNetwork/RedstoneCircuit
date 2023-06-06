@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block;
 
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 
-trait CommandBlockTrait {
+trait CommandBlockTrait{
     use PoweredByRedstoneTrait;
 
     protected int $commandBlockMode = 0;
@@ -18,75 +20,75 @@ trait CommandBlockTrait {
     protected int $successCount = 0;
     protected int $tick = -1;
 
-    public function getCommandBlockMode(): int {
+    public function getCommandBlockMode() : int{
         return $this->commandBlockMode;
     }
 
-    public function setCommandBlockMode(int $mode): void {
+    public function setCommandBlockMode(int $mode) : void{
         $this->commandBlockMode = $mode;
     }
 
-    public function getCommand(): string {
+    public function getCommand() : string{
         return $this->command;
     }
 
-    public function setCommand(string $command): void {
+    public function setCommand(string $command) : void{
         $this->command = $command;
     }
 
-    public function getLastOutput(): string {
+    public function getLastOutput() : string{
         return $this->lastOutput;
     }
 
-    public function setLastOutput(string $output): void {
+    public function setLastOutput(string $output) : void{
         $this->lastOutput = $output;
     }
 
-    public function isAuto(): bool {
+    public function isAuto() : bool{
         return $this->auto;
     }
 
-    public function setAuto(bool $auto): void {
+    public function setAuto(bool $auto) : void{
         $this->auto = $auto;
     }
 
-    public function isConditionalMode(): bool {
+    public function isConditionalMode() : bool{
         return $this->conditionalMode;
     }
 
-    public function setConditionalMode(bool $conditionalMode): void {
+    public function setConditionalMode(bool $conditionalMode) : void{
         $this->conditionalMode = $conditionalMode;
     }
 
-    public function getTickDelay(): int {
+    public function getTickDelay() : int{
         return $this->tickDelay;
     }
 
-    public function setTickDelay(int $delay): void {
+    public function setTickDelay(int $delay) : void{
         $this->tickDelay = $delay;
     }
 
-    public function isExecuteOnFirstTick(): bool {
+    public function isExecuteOnFirstTick() : bool{
         return $this->executeOnFirstTick;
     }
 
-    public function setExecuteOnFirstTick(bool $executeOnFirstTick): void {
+    public function setExecuteOnFirstTick(bool $executeOnFirstTick) : void{
         $this->executeOnFirstTick = $executeOnFirstTick;
     }
 
-    public function getSuccessCount(): int {
+    public function getSuccessCount() : int{
         return $this->successCount;
     }
 
-    public function setSuccessCount(int $count): void {
+    public function setSuccessCount(int $count) : void{
         $this->successCount = $count;
     }
 
-    public function getTick(): int {
+    public function getTick() : int{
         return $this->tick;
     }
 
-    public function setTick(int $tick): void {
+    public function setTick(int $tick) : void{
         $this->tick = $tick;
     }
 }

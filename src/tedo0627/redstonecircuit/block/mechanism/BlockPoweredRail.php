@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\PoweredRail;
@@ -12,54 +14,56 @@ use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use function count;
+use function in_array;
 
-class BlockPoweredRail extends PoweredRail implements IRedstoneComponent {
+class BlockPoweredRail extends PoweredRail implements IRedstoneComponent{
     use RedstoneComponentTrait;
 
-    public function onPostPlace(): void {
+    public function onPostPlace() : void{
         parent::onPostPlace();
         $this->updatePower($this);
         $this->updateConnectedRails();
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         $this->updateConnectedRails();
         return true;
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $this->updatePower($this);
         $this->updateConnectedRails();
     }
 
-    protected function updateConnectedRails(): void {
+    protected function updateConnectedRails() : void{
         $connections = $this->getCurrentShapeConnections();
-        for ($i = 0; $i < count($connections); $i++) {
+        for($i = 0; $i < count($connections); $i++){
             $face = $connections[$i];
             $up = false;
-            if (($face & RailConnectionInfo::FLAG_ASCEND) > 0) {
+            if(($face & RailConnectionInfo::FLAG_ASCEND) > 0){
                 $face = $face ^ RailConnectionInfo::FLAG_ASCEND;
                 $up = true;
             }
 
             $side = $this;
-            for ($j = 0; $j < 8; $j++) {
+            for($j = 0; $j < 8; $j++){
                 $side = $side->getSide($face);
-                if ($up) $side = $side->getSide(Facing::UP);
-                if (!$side instanceof PoweredRail) {
+                if($up) $side = $side->getSide(Facing::UP);
+                if(!$side instanceof PoweredRail){
                     $side = $side->getSide(Facing::DOWN);
-                    if (!$side instanceof PoweredRail) break;
+                    if(!$side instanceof PoweredRail) break;
                 }
 
                 $faces = $side->getCurrentShapeConnections();
-                if (in_array($face, $faces, true)) {
+                if(in_array($face, $faces, true)){
                     $this->updatePower($side);
                     $up = false;
                     continue;
                 }
 
-                if (in_array($face | RailConnectionInfo::FLAG_ASCEND, $faces, true)) {
+                if(in_array($face | RailConnectionInfo::FLAG_ASCEND, $faces, true)){
                     $this->updatePower($side);
                     $up = true;
                     continue;
@@ -69,33 +73,33 @@ class BlockPoweredRail extends PoweredRail implements IRedstoneComponent {
         }
     }
 
-    protected function updatePower(PoweredRail $block): void {
-        if (BlockPowerHelper::isPowered($block)) {
+    protected function updatePower(PoweredRail $block) : void{
+        if(BlockPowerHelper::isPowered($block)){
             $this->updatePowered($block, true);
             return;
         }
 
         $connections = $block->getCurrentShapeConnections();
-        for ($i = 0; $i < count($connections); $i++) {
+        for($i = 0; $i < count($connections); $i++){
             $face = $connections[$i];
             $up = false;
-            if (($face & RailConnectionInfo::FLAG_ASCEND) > 0) {
+            if(($face & RailConnectionInfo::FLAG_ASCEND) > 0){
                 $face = $face ^ RailConnectionInfo::FLAG_ASCEND;
                 $up = true;
             }
 
             $side = $block;
-            for ($j = 0; $j < 8; $j++) {
+            for($j = 0; $j < 8; $j++){
                 $side = $side->getSide($face);
-                if ($up) $side = $side->getSide(Facing::UP);
-                if (!$side instanceof PoweredRail) {
+                if($up) $side = $side->getSide(Facing::UP);
+                if(!$side instanceof PoweredRail){
                     $side = $side->getSide(Facing::DOWN);
-                    if (!$side instanceof PoweredRail) break;
+                    if(!$side instanceof PoweredRail) break;
                 }
 
                 $faces = $side->getCurrentShapeConnections();
-                if (in_array($face, $faces, true)) {
-                    if (BlockPowerHelper::isPowered($side)) {
+                if(in_array($face, $faces, true)){
+                    if(BlockPowerHelper::isPowered($side)){
                         $this->updatePowered($block, true);
                         return;
                     }
@@ -103,8 +107,8 @@ class BlockPoweredRail extends PoweredRail implements IRedstoneComponent {
                     continue;
                 }
 
-                if (in_array($face | RailConnectionInfo::FLAG_ASCEND, $faces, true)) {
-                    if (BlockPowerHelper::isPowered($side)) {
+                if(in_array($face | RailConnectionInfo::FLAG_ASCEND, $faces, true)){
+                    if(BlockPowerHelper::isPowered($side)){
                         $this->updatePowered($block, true);
                         return;
                     }
@@ -118,15 +122,15 @@ class BlockPoweredRail extends PoweredRail implements IRedstoneComponent {
         $this->updatePowered($block, false);
     }
 
-    protected function updatePowered(PoweredRail $block, bool $powered): void {
+    protected function updatePowered(PoweredRail $block, bool $powered) : void{
         $oldPowered = $block->isPowered();
-        if ($oldPowered === $powered) return;
+        if($oldPowered === $powered) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, $oldPowered);
             $event->call();
             $powered = $event->getNewPowered();
-            if ($oldPowered === $powered) return;
+            if($oldPowered === $powered) return;
         }
 
         $block->setPowered($powered);

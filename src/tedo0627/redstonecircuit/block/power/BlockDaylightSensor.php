@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\DaylightSensor;
@@ -13,40 +15,44 @@ use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use function cos;
+use function max;
+use function round;
+use const M_PI;
 
-class BlockDaylightSensor extends DaylightSensor implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockDaylightSensor extends DaylightSensor implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         $this->setInverted(!$this->isInverted());
         $this->updateSignal();
         return true;
     }
 
-    public function onScheduledUpdate(): void {
+    public function onScheduledUpdate() : void{
         $this->updateSignal();
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 20);
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->getOutputSignalStrength();
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->getOutputSignalStrength() > 0;
     }
 
-    protected function updateSignal(): void {
+    protected function updateSignal() : void{
         $oldSignal = $this->getOutputSignalStrength();
         $signal = $this->recalculateSignalStrength();
-        if ($oldSignal === $signal) return;
+        if($oldSignal === $signal) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstoneSignalUpdateEvent($this, $signal, $oldSignal);
             $event->call();
             $signal = $event->getNewSignal();
-            if ($oldSignal === $signal) return;
+            if($oldSignal === $signal) return;
         }
 
         $this->setOutputSignalStrength($signal);
@@ -54,7 +60,7 @@ class BlockDaylightSensor extends DaylightSensor implements IRedstoneComponent, 
         BlockUpdateHelper::updateAroundRedstone($this);
     }
 
-    private function recalculateSignalStrength(): int {
+    private function recalculateSignalStrength() : int{
         $pos = $this->getPosition();
         $lightLevel = $pos->getWorld()->getRealBlockSkyLightAt($pos->getX(), $pos->getY(), $pos->getZ());
         if($this->isInverted()) return 15 - $lightLevel;

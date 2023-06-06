@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block;
 
 use pocketmine\block\Block;
 
-trait PistonTrait {
+trait PistonTrait{
 
     protected float $progress = 0;
     protected float $lastProgress = 0;
@@ -19,49 +21,49 @@ trait PistonTrait {
     /** @var int[] */
     protected array $hideAttached = [];
 
-    public function getProgress(): float {
+    public function getProgress() : float{
         return $this->progress;
     }
 
-    public function setProgress(float $progress): void {
+    public function setProgress(float $progress) : void{
         $this->progress = $progress;
     }
 
-    public function getLastProgress(): float {
+    public function getLastProgress() : float{
         return $this->lastProgress;
     }
 
-    public function setLastProgress(float $progress): void {
+    public function setLastProgress(float $progress) : void{
         $this->lastProgress = $progress;
     }
 
-    public function getState(): int {
+    public function getState() : int{
         return $this->state;
     }
 
-    public function setState(int $state): void {
+    public function setState(int $state) : void{
         $this->state = $state;
     }
 
-    public function getNewState(): int {
+    public function getNewState() : int{
         return $this->newState;
     }
 
-    public function setNewState(int $state): void {
+    public function setNewState(int $state) : void{
         $this->newState = $state;
     }
 
     /** @return int[] */
-    public function getBreakBlocks(): array {
+    public function getBreakBlocks() : array{
         return $this->breakBlocks;
     }
 
     /** @param int[] $breakBlocks */
-    public function setBreakBlocks(array $breakBlocks): void {
+    public function setBreakBlocks(array $breakBlocks) : void{
         $this->breakBlocks = $breakBlocks;
     }
 
-    public function addBreakBlock(Block $block): void {
+    public function addBreakBlock(Block $block) : void{
         $pos = $block->getPosition();
         $this->breakBlocks[] = $pos->getFloorX();
         $this->breakBlocks[] = $pos->getFloorY();
@@ -69,16 +71,16 @@ trait PistonTrait {
     }
 
     /** @return int[] */
-    public function getAttachedBlocks(): array {
+    public function getAttachedBlocks() : array{
         return $this->attachedBlocks;
     }
 
     /** @param int[] $attachedBlocks */
-    public function setAttachedBlocks(array $attachedBlocks): void {
+    public function setAttachedBlocks(array $attachedBlocks) : void{
         $this->attachedBlocks = $attachedBlocks;
     }
 
-    public function addAttachedBlock(Block $block): void {
+    public function addAttachedBlock(Block $block) : void{
         $pos = $block->getPosition();
         $this->attachedBlocks[] = $pos->getFloorX();
         $this->attachedBlocks[] = $pos->getFloorY();
@@ -86,16 +88,16 @@ trait PistonTrait {
     }
 
     /** @return int[] */
-    public function getHideAttachedBlocks(): array {
+    public function getHideAttachedBlocks() : array{
         return $this->hideAttached;
     }
 
     /** @param int[] $attachedBlocks */
-    public function setHideAttachedBlocks(array $attachedBlocks): void {
+    public function setHideAttachedBlocks(array $attachedBlocks) : void{
         $this->hideAttached = $attachedBlocks;
     }
 
-    public function addHideAttachedBlock(Block $block): void {
+    public function addHideAttachedBlock(Block $block) : void{
         $pos = $block->getPosition();
         $this->hideAttached[] = $pos->getFloorX();
         $this->hideAttached[] = $pos->getFloorY();

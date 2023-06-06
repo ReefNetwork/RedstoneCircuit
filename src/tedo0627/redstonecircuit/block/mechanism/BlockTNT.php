@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\TNT;
@@ -9,16 +11,16 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockTNT extends TNT implements IRedstoneComponent {
+class BlockTNT extends TNT implements IRedstoneComponent{
     use RedstoneComponentTrait;
 
-    public function onRedstoneUpdate(): void {
-        if (!BlockPowerHelper::isPowered($this)) return;
+    public function onRedstoneUpdate() : void{
+        if(!BlockPowerHelper::isPowered($this)) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, true, false);
             $event->call();
-            if (!$event->getNewPowered()) return;
+            if(!$event->getNewPowered()) return;
         }
         $this->ignite();
     }

@@ -43,41 +43,41 @@ use tedo0627\redstonecircuit\tile\PistonArm;
  * @method static BlockDropper DROPPER()
  */
 final class ExtraVanillaBlocks{
-	use CloningRegistryTrait;
+    use CloningRegistryTrait;
 
-	private function __construct(){
-		//NOOP
-	}
+    private function __construct(){
+        //NOOP
+    }
 
-	protected static function register(string $name, Block $block) : void{
-		self::_registryRegister($name, $block);
-	}
+    protected static function register(string $name, Block $block) : void{
+        self::_registryRegister($name, $block);
+    }
 
-	/**
-	 * @return Block[]
-	 * @phpstan-return array<string, Block>
-	 */
-	public static function getAll() : array{
-		//phpstan doesn't support generic traits yet :(
-		/** @var Block[] $result */
-		$result = self::_registryGetAll();
-		return $result;
-	}
+    /**
+     * @return Block[]
+     * @phpstan-return array<string, Block>
+     */
+    public static function getAll() : array{
+        //phpstan doesn't support generic traits yet :(
+        /** @var Block[] $result */
+        $result = self::_registryGetAll();
+        return $result;
+    }
 
-	protected static function setup() : void{
-		$indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
-		self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class, CommandBlockType::NORMAL()), "Command Block", $indestructibleTypeInfo));
-		$dispenserTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
-		self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), Dispenser::class), "Dispenser", $dispenserTypeInfo));
-		self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), Dropper::class), "Dropper", $dispenserTypeInfo));
-		$pistonTypeInfo = new BlockTypeInfo(new BlockBreakInfo(1.5, BlockToolType::PICKAXE));
-		self::register("piston", new BlockPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Piston", $pistonTypeInfo));
-		self::register("sticky_piston", new BlockStickyPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Sticky Piston", $pistonTypeInfo));
-		self::register("piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Piston Arm Collision", $pistonTypeInfo));
-		self::register("sticky_piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Sticky Piston Arm Collision", $pistonTypeInfo));
-		self::register("moving_block", new BlockMoving(new BlockIdentifier(BlockTypeIds::newId(), MovingBlock::class), "Moving Block", $indestructibleTypeInfo));
-		$reusableTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
-		self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId(), Observer::class), "Observer", $reusableTypeInfo));
-		self::register("target", new BlockTarget(new BlockIdentifier(BlockTypeIds::newId()), "Target", $reusableTypeInfo));
-	}
+    protected static function setup() : void{
+        $indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
+        self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class, CommandBlockType::NORMAL()), "Command Block", $indestructibleTypeInfo));
+        $dispenserTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
+        self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), Dispenser::class), "Dispenser", $dispenserTypeInfo));
+        self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), Dropper::class), "Dropper", $dispenserTypeInfo));
+        $pistonTypeInfo = new BlockTypeInfo(new BlockBreakInfo(1.5, BlockToolType::PICKAXE));
+        self::register("piston", new BlockPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Piston", $pistonTypeInfo));
+        self::register("sticky_piston", new BlockStickyPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Sticky Piston", $pistonTypeInfo));
+        self::register("piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Piston Arm Collision", $pistonTypeInfo));
+        self::register("sticky_piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Sticky Piston Arm Collision", $pistonTypeInfo));
+        self::register("moving_block", new BlockMoving(new BlockIdentifier(BlockTypeIds::newId(), MovingBlock::class), "Moving Block", $indestructibleTypeInfo));
+        $reusableTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
+        self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId(), Observer::class), "Observer", $reusableTypeInfo));
+        self::register("target", new BlockTarget(new BlockIdentifier(BlockTypeIds::newId()), "Target", $reusableTypeInfo));
+    }
 }

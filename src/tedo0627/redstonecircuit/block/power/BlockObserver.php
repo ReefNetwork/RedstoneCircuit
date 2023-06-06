@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Block;
@@ -19,8 +21,10 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\tile\Observer;
+use function abs;
+use function assert;
 
-class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneWire{
     use AnyFacingTrait;
     use BlockEntityInitializeTrait;
     use PoweredByRedstoneTrait;
@@ -29,27 +33,27 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
     protected int $blockId = -1;
     protected int $stateMeta = -1;
 
-    protected function writeStateToMeta(): int {
+    protected function writeStateToMeta() : int{
         return BlockDataSerializer::writeFacing($this->facing) |
             ($this->isPowered() ? 0x08 : 0);
     }
 
-    public function readStateFromData(int $id, int $stateMeta): void {
+    public function readStateFromData(int $id, int $stateMeta) : void{
         $this->setFacing(BlockDataSerializer::readFacing($stateMeta & 0x07));
         $this->setPowered(($stateMeta & 0x08) !== 0);
     }
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld() : void{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof Observer) {
+        if($tile instanceof Observer){
             $this->setSideBlockId($tile->getBlockId());
             $this->setSideStateMeta($tile->getStateMeta());
             $this->setInitialized($tile->isInitialized());
         }
     }
 
-    public function writeStateToWorld(): void {
+    public function writeStateToWorld() : void{
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
         assert($tile instanceof Observer);
@@ -58,38 +62,38 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         $tile->setInitialized($this->isInitialized());
     }
 
-    public function getStateBitmask(): int {
+    public function getStateBitmask() : int{
         return 0b1111;
     }
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($player !== null) {
+    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
+        if($player !== null){
             $x = abs($player->getLocation()->getFloorX() - $this->getPosition()->getX());
             $y = $player->getLocation()->getFloorY() - $this->getPosition()->getY();
             $z = abs($player->getLocation()->getFloorZ() - $this->getPosition()->getZ());
-            if ($y > 0 && $x < 2 && $z < 2) {
+            if($y > 0 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::DOWN);
-            } elseif ($y < -1 && $x < 2 && $z < 2) {
+            }elseif($y < -1 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::UP);
-            } else {
+            }else{
                 $this->setFacing($player->getHorizontalFacing());
             }
         }
         return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
         return true;
     }
 
-    public function onNearbyBlockChange(): void {
+    public function onNearbyBlockChange() : void{
         $block = $this->getSide($this->getFacing());
         $id = $block->getId();
         $state = $block->getMeta();
 
-        if ($this->getSideBlockId() === $id && $this->getSideStateMeta() === $state) return;
+        if($this->getSideBlockId() === $id && $this->getSideStateMeta() === $state) return;
 
         $this->setSideBlockId($id);
         $this->setSideStateMeta($state);
@@ -98,15 +102,15 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 2);
     }
 
-    public function onScheduledUpdate(): void {
-        if (!$this->isInitialized()) {
+    public function onScheduledUpdate() : void{
+        if(!$this->isInitialized()){
             $this->setInitialized(true);
             $this->writeStateToWorld();
             return;
         }
 
         $powered = !$this->isPowered();
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, !$powered);
             $event->call();
             $powered = $event->getNewPowered();
@@ -115,38 +119,38 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
         BlockUpdateHelper::updateDiodeRedstone($this, Facing::opposite($this->getFacing()));
 
-        if ($this->isPowered()) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
+        if($this->isPowered()) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
     }
 
-    public function getSideBlockId(): int {
+    public function getSideBlockId() : int{
         return $this->blockId;
     }
 
-    public function setSideBlockId(int $id): void {
+    public function setSideBlockId(int $id) : void{
         $this->blockId = $id;
     }
 
-    public function getSideStateMeta(): int {
+    public function getSideStateMeta() : int{
         return $this->stateMeta;
     }
 
-    public function setSideStateMeta(int $meta): void {
+    public function setSideStateMeta(int $meta) : void{
         $this->stateMeta = $meta;
     }
 
-    public function getStrongPower(int $face): int {
+    public function getStrongPower(int $face) : int{
         return $this->isPowered() && $this->getFacing() === $face ? 15 : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->isPowered() && $this->getFacing() === $face ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->isPowered();
     }
 
-    public function isConnect(int $face): bool {
+    public function isConnect(int $face) : bool{
         return $this->getFacing() === $face;
     }
 }

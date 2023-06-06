@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\WoodenTrapdoor;
@@ -10,18 +12,18 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockWoodenTrapdoor extends WoodenTrapdoor implements IRedstoneComponent {
+class BlockWoodenTrapdoor extends WoodenTrapdoor implements IRedstoneComponent{
     use RedstoneComponentTrait;
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered === $this->isOpen()) return;
+        if($powered === $this->isOpen()) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isOpen());
             $event->call();
             $powered = $event->getNewPowered();
-            if ($powered === $this->isOpen()) return;
+            if($powered === $this->isOpen()) return;
         }
 
         $this->setOpen($powered);

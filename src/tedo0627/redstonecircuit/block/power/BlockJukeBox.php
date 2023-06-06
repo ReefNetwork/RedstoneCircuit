@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Jukebox;
@@ -14,12 +16,12 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockJukeBox extends Jukebox implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockJukeBox extends Jukebox implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (RedstoneCircuit::isCallEvent()) {
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+        if(RedstoneCircuit::isCallEvent()){
             $powered = $this->getRecord() !== null;
             $event = new BlockRedstonePowerUpdateEvent($this, !$powered, $powered);
             $event->call();
@@ -29,11 +31,11 @@ class BlockJukeBox extends Jukebox implements IRedstoneComponent, ILinkRedstoneW
         return true;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->getRecord() !== null ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->getRecord() !== null;
     }
 }

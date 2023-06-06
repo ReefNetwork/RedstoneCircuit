@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use InvalidArgumentException;
@@ -41,8 +43,11 @@ use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\ClickFailSound;
 use tedo0627\redstonecircuit\tile\Dispenser;
+use function abs;
+use function array_key_exists;
+use function assert;
 
-class BlockDispenser extends Opaque implements IRedstoneComponent {
+class BlockDispenser extends Opaque implements IRedstoneComponent{
     use AnyFacingTrait;
     use BlockEntityInitializeTrait;
     use PoweredByRedstoneTrait;
@@ -53,155 +58,155 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
     /** @var DispenseItemBehavior[] */
     protected static array $behaviors = [];
 
-    public function __construct(BlockIdentifier $idInfo, string $name, BlockBreakInfo $breakInfo) {
+    public function __construct(BlockIdentifier $idInfo, string $name, BlockTypeInfo $typeInfo){
         parent::__construct($idInfo, $name, $breakInfo);
         self::registerBehavior();
     }
 
-    protected function writeStateToMeta(): int {
+    protected function writeStateToMeta() : int{
         return BlockDataSerializer::writeFacing($this->facing) |
             ($this->isPowered() ? 0x08 : 0);
     }
 
-    public function readStateFromData(int $id, int $stateMeta): void {
+    public function readStateFromData(int $id, int $stateMeta) : void{
         $this->setFacing(BlockDataSerializer::readFacing($stateMeta & 0x07));
         $this->setPowered(($stateMeta & 0x08) !== 0);
     }
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld() : Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof Dispenser) {
+        if($tile instanceof Dispenser){
             $this->setInitialized($tile->isInitialized());
         }
     }
 
-    public function writeStateToWorld(): void {
+    public function writeStateToWorld() : void{
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
         assert($tile instanceof Dispenser);
         $tile->setInitialized($this->isInitialized());
     }
 
-    public function getStateBitmask(): int {
+    public function getStateBitmask() : int{
         return 0b1111;
     }
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($player !== null) {
+    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
+        if($player !== null){
             $x = abs($player->getLocation()->getFloorX() - $this->getPosition()->getX());
             $y = $player->getLocation()->getFloorY() - $this->getPosition()->getY();
             $z = abs($player->getLocation()->getFloorZ() - $this->getPosition()->getZ());
-            if ($y > 0 && $x < 2 && $z < 2) {
+            if($y > 0 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::UP);
-            } elseif ($y < -1 && $x < 2 && $z < 2) {
+            }elseif($y < -1 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::DOWN);
-            } else {
+            }else{
                 $this->setFacing(Facing::opposite($player->getHorizontalFacing()));
             }
         }
         return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
     }
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($player === null) return false;
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+        if($player === null) return false;
 
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof Dispenser) return true;
+        if(!$tile instanceof Dispenser) return true;
 
         $inventory = $tile->getInventory();
         $player->setCurrentWindow($inventory);
         return true;
     }
 
-    public function asItem(): Item {
+    public function asItem() : Item{
         return ItemFactory::getInstance()->get($this->idInfo->getItemId(), 3);
     }
 
-    public function onScheduledUpdate(): void {
-        if (!$this->isInitialized()) {
+    public function onScheduledUpdate() : void{
+        if(!$this->isInitialized()){
             $this->setInitialized(true);
             $this->writeStateToWorld();
             return;
         }
 
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof Dispenser) return;
+        if(!$tile instanceof Dispenser) return;
 
         $inventory = $tile->getInventory();
         $slot = $inventory->getRandomSlot();
-        if ($slot === -1) {
+        if($slot === -1){
             $this->getPosition()->getWorld()->addSound($this->getPosition(), new ClickFailSound(1.2));
             return;
         }
 
         $item = $inventory->getItem($slot);
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockDispenseEvent($this, clone $item);
             $event->call();
-            if ($event->isCancelled()) return;
+            if($event->isCancelled()) return;
         }
 
         $result = $this->dispense($item);
         $inventory->setItem($slot, $item);
-        if ($result !== null) $inventory->addItem($result);
+        if($result !== null) $inventory->addItem($result);
         $this->getPosition()->getWorld()->addSound($this->getPosition(), new ClickSound());
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered === $this->isPowered()) return;
+        if($powered === $this->isPowered()) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
             $event->call();
             $powered = $event->getNewPowered();
-            if ($powered === $this->isPowered()) return;
+            if($powered === $this->isPowered()) return;
         }
 
         $this->setPowered($powered);
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-        if ($powered) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
+        if($powered) $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 4);
     }
 
-    public function dispense(Item $item): ?Item {
+    public function dispense(Item $item) : ?Item{
         $id = $item->getId();
-        if (array_key_exists($id, self::$behaviors)) {
+        if(array_key_exists($id, self::$behaviors)){
             $behavior = self::$behaviors[$id];
             return $behavior->dispense($this, $item);
         }
         return self::$default->dispense($this, $item);
     }
 
-    private static function registerBehavior() {
-        if (self::$init) return;
+    private static function registerBehavior(){
+        if(self::$init) return;
 
         self::$init = true;
         self::$default = new DefaultItemDispenseBehavior();
 
-        self::$behaviors[ItemIds::ARROW] = new class extends ProjectileDispenseBehavior {
-            public function getEntity(Location $location, Item $item): Entity {
+        self::$behaviors[ItemIds::ARROW] = new class extends ProjectileDispenseBehavior{
+            public function getEntity(Location $location, Item $item) : Entity{
                 return new Arrow($location, null, false);
             }
         };
-        self::$behaviors[ItemIds::EGG] = new class extends ProjectileDispenseBehavior {
-            public function getEntity(Location $location, Item $item): Entity {
+        self::$behaviors[ItemIds::EGG] = new class extends ProjectileDispenseBehavior{
+            public function getEntity(Location $location, Item $item) : Entity{
                 return new Egg($location, null);
             }
         };
-        self::$behaviors[ItemIds::SNOWBALL] = new class extends ProjectileDispenseBehavior {
-            public function getEntity(Location $location, Item $item): Entity {
+        self::$behaviors[ItemIds::SNOWBALL] = new class extends ProjectileDispenseBehavior{
+            public function getEntity(Location $location, Item $item) : Entity{
                 return new Snowball($location, null);
             }
         };
-        self::$behaviors[ItemIds::EXPERIENCE_BOTTLE] = new class extends ProjectileDispenseBehavior {
-            public function getEntity(Location $location, Item $item): Entity {
+        self::$behaviors[ItemIds::EXPERIENCE_BOTTLE] = new class extends ProjectileDispenseBehavior{
+            public function getEntity(Location $location, Item $item) : Entity{
                 return new ExperienceBottle($location, null);
             }
         };
-        self::$behaviors[ItemIds::SPLASH_POTION] = new class extends ProjectileDispenseBehavior {
-            public function getEntity(Location $location, Item $item): Entity {
-                if (!$item instanceof \pocketmine\item\SplashPotion) throw new InvalidArgumentException("item was not SplashPotion");
+        self::$behaviors[ItemIds::SPLASH_POTION] = new class extends ProjectileDispenseBehavior{
+            public function getEntity(Location $location, Item $item) : Entity{
+                if(!$item instanceof \pocketmine\item\SplashPotion) throw new InvalidArgumentException("item was not SplashPotion");
                 return new SplashPotion($location, null, $item->getType());
             }
         };
@@ -212,7 +217,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
         self::$behaviors[ItemIds::UNDYED_SHULKER_BOX] = new ShulkerBoxDispenseBehavior();
         self::$behaviors[ItemIds::SHULKER_BOX] = new ShulkerBoxDispenseBehavior();
         self::$behaviors[ItemIds::GLASS_BOTTLE] = new GlassBottleDispenseBehavior();
-        foreach ([
+        foreach([
             ItemIds::LEATHER_HELMET => 0, ItemIds::LEATHER_CHESTPLATE => 1, ItemIds::LEATHER_LEGGINGS => 2, ItemIds::LEATHER_BOOTS => 3,
             ItemIds::CHAIN_HELMET => 0, ItemIds::CHAIN_CHESTPLATE => 1, ItemIds::CHAIN_LEGGINGS => 2, ItemIds::CHAIN_BOOTS => 3,
             ItemIds::IRON_HELMET => 0, ItemIds::IRON_CHESTPLATE => 1, ItemIds::IRON_LEGGINGS => 2, ItemIds::IRON_BOOTS => 3,
@@ -220,7 +225,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
             ItemIds::GOLDEN_HELMET => 0, ItemIds::GOLDEN_CHESTPLATE => 1, ItemIds::GOLDEN_LEGGINGS => 2, ItemIds::GOLDEN_BOOTS => 3,
             ItemIds::CARVED_PUMPKIN => 0, ItemIds::SKULL => 0, ItemIds::ELYTRA => 2, ItemIds::TURTLE_HELMET => 0,
             748 => 0, 749 => 1, 750 => 2, 751 => 3,
-                 ] as $id => $slot) {
+        ] as $id => $slot){
             self::$behaviors[$id] = new ArmorDispenseBehavior($slot);
         }
     }

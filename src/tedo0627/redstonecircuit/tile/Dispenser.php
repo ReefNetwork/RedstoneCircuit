@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Container;
@@ -13,24 +15,24 @@ use pocketmine\world\World;
 use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 use tedo0627\redstonecircuit\block\inventory\DispenserInventory;
 
-class Dispenser extends Spawnable implements Container, Nameable {
+class Dispenser extends Spawnable implements Container, Nameable{
     use BlockEntityInitializeTrait;
     use NameableTrait;
     use ContainerTrait;
 
     protected DispenserInventory $inventory;
 
-    public function __construct(World $world, Vector3 $pos) {
+    public function __construct(World $world, Vector3 $pos){
         parent::__construct($world, $pos);
         $this->inventory = new DispenserInventory($this->getPosition());
     }
 
-    public function readSaveData(CompoundTag $nbt): void {
+    public function readSaveData(CompoundTag $nbt) : void{
         $this->loadName($nbt);
         $this->loadItems($nbt);
     }
 
-    protected function writeSaveData(CompoundTag $nbt): void {
+    protected function writeSaveData(CompoundTag $nbt) : void{
         $this->saveName($nbt);
         $this->saveItems($nbt);
     }
@@ -38,18 +40,18 @@ class Dispenser extends Spawnable implements Container, Nameable {
     /**
      * @return DispenserInventory
      */
-    public function getInventory() {
+    public function getInventory(){
         return $this->inventory;
     }
 
     /**
      * @return DispenserInventory
      */
-    public function getRealInventory() {
+    public function getRealInventory(){
         return $this->inventory;
     }
 
-    public function getDefaultName(): string {
+    public function getDefaultName() : string{
         return "Dispenser";
     }
 }

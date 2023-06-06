@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Redstone;
@@ -11,25 +13,25 @@ use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 
-class BlockRedstone extends Redstone implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockRedstone extends Redstone implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onPostPlace(): void {
+    public function onPostPlace() : void{
         BlockUpdateHelper::updateAroundRedstone($this);
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         $bool = parent::onBreak($item, $player);
         BlockUpdateHelper::updateAroundRedstone($this);
         return $bool;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return 15;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return true;
     }
 }

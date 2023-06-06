@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Lever;
@@ -15,18 +17,18 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockLever extends Lever implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockLever extends Lever implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()->getFacing()));
         return true;
     }
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if (RedstoneCircuit::isCallEvent()) {
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+        if(RedstoneCircuit::isCallEvent()){
             $powered = $this->isActivated();
             $event = new BlockRedstonePowerUpdateEvent($this, !$powered, $powered);
             $event->call();
@@ -36,16 +38,16 @@ class BlockLever extends Lever implements IRedstoneComponent, ILinkRedstoneWire 
         return true;
     }
 
-    public function getStrongPower(int $face): int {
-        if (!$this->isActivated()) return 0;
+    public function getStrongPower(int $face) : int{
+        if(!$this->isActivated()) return 0;
         return $face === $this->getFacing()->getFacing() ? 15 : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->isActivated() ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->isActivated();
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\dispenser;
 
 use pocketmine\entity\Entity;
@@ -7,10 +9,11 @@ use pocketmine\entity\Location;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
+use function mt_rand;
 
-abstract class ProjectileDispenseBehavior implements DispenseItemBehavior {
+abstract class ProjectileDispenseBehavior implements DispenseItemBehavior{
 
-    public function dispense(BlockDispenser $block, Item $item): ?Item {
+    public function dispense(BlockDispenser $block, Item $item) : ?Item{
         $pos = $block->getPosition();
         $world = $pos->getWorld();
         $facePos = Vector3::zero()->getSide($block->getFacing());
@@ -27,5 +30,5 @@ abstract class ProjectileDispenseBehavior implements DispenseItemBehavior {
         return null;
     }
 
-    public abstract function getEntity(Location $location, Item $item): Entity;
+    public abstract function getEntity(Location $location, Item $item) : Entity;
 }

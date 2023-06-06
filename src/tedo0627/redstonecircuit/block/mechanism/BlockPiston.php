@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Block;
@@ -27,25 +29,28 @@ use tedo0627\redstonecircuit\sound\PistonInSound;
 use tedo0627\redstonecircuit\sound\PistonOutSound;
 use tedo0627\redstonecircuit\tile\IgnorePiston;
 use tedo0627\redstonecircuit\tile\PistonArm;
+use function abs;
+use function assert;
+use function count;
 
-class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWire{
     use AnyFacingTrait;
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
     use PistonTrait;
 
-    protected function writeStateToMeta(): int {
+    protected function writeStateToMeta() : int{
         return BlockDataSerializer::writeFacing($this->facing);
     }
 
-    public function readStateFromData(int $id, int $stateMeta): void {
+    public function readStateFromData(int $id, int $stateMeta) : void{
         $this->setFacing(BlockDataSerializer::readFacing($stateMeta & 0x07));
     }
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld() : Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof PistonArm) return;
+        if(!$tile instanceof PistonArm) return;
 
         $this->setProgress($tile->getProgress());
         $this->setLastProgress($tile->getLastProgress());
@@ -56,7 +61,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
         $this->setHideAttachedBlocks($tile->getHideAttachedBlocks());
     }
 
-    public function writeStateToWorld(): void {
+    public function writeStateToWorld() : void{
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
         assert($tile instanceof PistonArm);
@@ -71,82 +76,82 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
         $tile->setHideAttachedBlocks($this->getHideAttachedBlocks());
     }
 
-    public function getStateBitmask(): int {
+    public function getStateBitmask() : int{
         return 0b1111;
     }
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($player !== null) {
+    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
+        if($player !== null){
             $x = abs($player->getLocation()->getFloorX() - $this->getPosition()->getX());
             $y = $player->getLocation()->getFloorY() - $this->getPosition()->getY();
             $z = abs($player->getLocation()->getFloorZ() - $this->getPosition()->getZ());
-            if ($y > 0 && $x < 2 && $z < 2) {
+            if($y > 0 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::UP);
-            } elseif ($y < -1 && $x < 2 && $z < 2) {
+            }elseif($y < -1 && $x < 2 && $z < 2){
                 $this->setFacing(Facing::DOWN);
-            } else {
+            }else{
                 $this->setFacing($player->getHorizontalFacing());
             }
         }
         return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
         $block = $this->getSide($this->getPistonArmFace());
-        if ($block instanceof BlockPistonArmCollision && $this->getFacing() === $block->getFacing()) {
+        if($block instanceof BlockPistonArmCollision && $this->getFacing() === $block->getFacing()){
             $this->getPosition()->getWorld()->useBreakOn($block->getPosition());
         }
         return true;
     }
 
-    public function onScheduledUpdate(): void {
-        if (BlockPowerHelper::isPowered($this, $this->getPistonArmFace())) {
-            if (!$this->push()) return;
-        } else {
-            if (!$this->pull()) return;
+    public function onScheduledUpdate() : void{
+        if(BlockPowerHelper::isPowered($this, $this->getPistonArmFace())){
+            if(!$this->push()) return;
+        }else{
+            if(!$this->pull()) return;
         }
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
     }
 
-    public function asItem(): Item {
+    public function asItem() : Item{
         return ItemFactory::getInstance()->get($this->idInfo->getItemId(), 1);
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
     }
 
-    public function isSticky(): bool {
+    public function isSticky() : bool{
         return false;
     }
 
-    public function getNewPistonArm(): Block {
+    public function getNewPistonArm() : Block{
         return BlockFactory::getInstance()->get(Ids::PISTONARMCOLLISION, $this->getFacing());
     }
 
-    public function getPistonArmFace(): int {
+    public function getPistonArmFace() : int{
         $face = $this->getFacing();
         return Facing::axis($face) === Axis::Y ? $face : Facing::opposite($face);
     }
 
-    private function push(): bool {
+    private function push() : bool{
         $state = $this->getState();
-        if ($state === 0) {
+        if($state === 0){
             $resolver = new PistonResolver($this, $this->isSticky(), true);
             $resolver->resolve();
-            if (!$resolver->isSuccess()) return false;
+            if(!$resolver->isSuccess()) return false;
 
-            if (RedstoneCircuit::isCallEvent()) {
+            if(RedstoneCircuit::isCallEvent()){
                 $event = new BlockPistonExtendEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
                 $event->call();
-                if ($event->isCancelled()) return false;
+                if($event->isCancelled()) return false;
             }
 
-            foreach ($resolver->getBreakBlocks() as $block) {
+            foreach($resolver->getBreakBlocks() as $block){
                 $this->addBreakBlock($block);
             }
-            foreach ($resolver->getAttachBlocks() as $block) {
+            foreach($resolver->getAttachBlocks() as $block){
                 $this->addAttachedBlock($block);
             }
 
@@ -154,24 +159,24 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setNewState(1);
 
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-        } else if ($state === 1) {
+        }elseif($state === 1){
             $face = $this->getPistonArmFace();
             $side = $this->getSide($face);
             $arm = $this->getPosition()->getWorld()->getBlock($side->getPosition());
-            if (!($arm instanceof BlockPistonArmCollision)) {
+            if(!($arm instanceof BlockPistonArmCollision)){
                 $resolver = new PistonResolver($this, $this->isSticky(), true);
                 $resolver->resolve();
-                if (!$resolver->isSuccess()) {
+                if(!$resolver->isSuccess()){
                     $this->setState(0);
                     $this->setNewState(0);
                     $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
                     return false;
                 }
 
-                if (RedstoneCircuit::isCallEvent()) {
+                if(RedstoneCircuit::isCallEvent()){
                     $event = new BlockPistonExtendEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
                     $event->call();
-                    if ($event->isCancelled()) {
+                    if($event->isCancelled()){
                         $this->setState(0);
                         $this->setNewState(0);
                         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
@@ -183,16 +188,16 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 $this->setAttachedBlocks([]);
 
                 $world = $this->getPosition()->getWorld();
-                foreach ($resolver->getBreakBlocks() as $block) {
+                foreach($resolver->getBreakBlocks() as $block){
                     $world->useBreakOn($block->getPosition());
                 }
-                foreach ($resolver->getAttachBlocks() as $block) {
+                foreach($resolver->getAttachBlocks() as $block){
                     $attachSide = $block->getSide($face);
                     $this->addHideAttachedBlock($block);
                     $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
                     $tile = $world->getTile($block->getPosition());
-                    if ($tile instanceof IgnorePiston) $tile = null;
-                    if ($moving instanceof BlockMoving) {
+                    if($tile instanceof IgnorePiston) $tile = null;
+                    if($moving instanceof BlockMoving){
                         $moving->setExpanding(true);
                         $moving->setMovingBlock($block, $tile);
                         $moving->setPistonPos($this);
@@ -213,24 +218,24 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setLastProgress(1.0);
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new PistonOutSound());
-        } else if ($state === 2) {
+        }elseif($state === 2){
             $attached = $this->getHideAttachedBlocks();
             $world = $this->getPosition()->getWorld();
             $face = $this->getPistonArmFace();
-            for ($i = 0; $i < count($attached); $i += 3) {
+            for($i = 0; $i < count($attached); $i += 3){
                 $x = $attached[$i];
                 $y = $attached[$i + 1];
                 $z = $attached[$i + 2];
                 $moving = $world->getBlockAt($x, $y, $z)->getSide($face);
                 $pos = $moving->getPosition();
-                if ($moving instanceof BlockMoving) {
+                if($moving instanceof BlockMoving){
                     $world->setBlock($pos, $moving->getMovingBlock());
                     $tile = $world->getTile($pos);
                     $tag = $moving->getMovingEntity();
-                    if ($tile !== null && $tag !== null) $tile->readSaveData($tag);
+                    if($tile !== null && $tag !== null) $tile->readSaveData($tag);
 
                     $block = $world->getBlock($pos);
-                    if ($block instanceof IRedstoneComponent) $block->onRedstoneUpdate();
+                    if($block instanceof IRedstoneComponent) $block->onRedstoneUpdate();
                     BlockUpdateHelper::updateAroundRedstone($block);
                 }
             }
@@ -238,28 +243,28 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setHideAttachedBlocks([]);
             $this->writeStateToWorld();
             return false;
-        } else if ($state === 3) return $this->pull();
+        }elseif($state === 3) return $this->pull();
         else return false;
         return true;
     }
 
-    private function pull(): bool {
+    private function pull() : bool{
         $state = $this->getState();
-        if ($state === 2) {
+        if($state === 2){
             $resolver = new PistonResolver($this, $this->isSticky(), false);
             $resolver->resolve();
-            if (!$resolver->isSuccess()) return false;
+            if(!$resolver->isSuccess()) return false;
 
-            if (RedstoneCircuit::isCallEvent()) {
+            if(RedstoneCircuit::isCallEvent()){
                 $event = new BlockPistonRetractEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
                 $event->call();
-                if ($event->isCancelled()) return false;
+                if($event->isCancelled()) return false;
             }
 
-            foreach ($resolver->getBreakBlocks() as $block) {
+            foreach($resolver->getBreakBlocks() as $block){
                 $this->addBreakBlock($block);
             }
-            foreach ($resolver->getAttachBlocks() as $block) {
+            foreach($resolver->getAttachBlocks() as $block){
                 $this->addAttachedBlock($block);
             }
 
@@ -267,24 +272,24 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setNewState(3);
 
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
-        } else if ($state === 3) {
+        }elseif($state === 3){
             $face = $this->getPistonArmFace();
             $side = $this->getSide($face);
             $arm = $this->getPosition()->getWorld()->getBlock($side->getPosition());
-            if ($arm instanceof BlockPistonArmCollision) {
+            if($arm instanceof BlockPistonArmCollision){
                 $resolver = new PistonResolver($this, $this->isSticky(), false);
                 $resolver->resolve();
-                if (!$resolver->isSuccess()) {
+                if(!$resolver->isSuccess()){
                     $this->setState(2);
                     $this->setNewState(2);
                     $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
                     return false;
                 }
 
-                if (RedstoneCircuit::isCallEvent()) {
+                if(RedstoneCircuit::isCallEvent()){
                     $event = new BlockPistonRetractEvent($this, $resolver->getAttachBlocks(), $resolver->getBreakBlocks());
                     $event->call();
-                    if ($event->isCancelled()) {
+                    if($event->isCancelled()){
                         $this->setState(2);
                         $this->setNewState(2);
                         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
@@ -298,17 +303,17 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 $this->getPosition()->getWorld()->setBlock($side->getPosition(), VanillaBlocks::AIR());
 
                 $world = $this->getPosition()->getWorld();
-                foreach ($resolver->getBreakBlocks() as $block) {
+                foreach($resolver->getBreakBlocks() as $block){
                     $world->useBreakOn($block->getPosition());
                 }
                 $face = Facing::opposite($face);
-                foreach ($resolver->getAttachBlocks() as $block) {
+                foreach($resolver->getAttachBlocks() as $block){
                     $side = $block->getSide($face);
                     $this->addHideAttachedBlock($block);
                     $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
                     $tile = $world->getTile($block->getPosition());
-                    if ($tile instanceof IgnorePiston) $tile = null;
-                    if ($moving instanceof BlockMoving) {
+                    if($tile instanceof IgnorePiston) $tile = null;
+                    if($moving instanceof BlockMoving){
                         $moving->setExpanding(false);
                         $moving->setMovingBlock($block, $tile);
                         $moving->setPistonPos($this);
@@ -327,24 +332,24 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setLastProgress(0.0);
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
             $this->getPosition()->getWorld()->addSound($this->getPosition()->add(0.5, 0.5, 0.5), new PistonInSound());
-        } else if ($state === 0) {
+        }elseif($state === 0){
             $attached = $this->getHideAttachedBlocks();
             $world = $this->getPosition()->getWorld();
             $face = Facing::opposite($this->getPistonArmFace());
-            for ($i = 0; $i < count($attached); $i += 3) {
+            for($i = 0; $i < count($attached); $i += 3){
                 $x = $attached[$i];
                 $y = $attached[$i + 1];
                 $z = $attached[$i + 2];
                 $moving = $world->getBlockAt($x, $y, $z)->getSide($face);
                 $pos = $moving->getPosition();
-                if ($moving instanceof BlockMoving) {
+                if($moving instanceof BlockMoving){
                     $world->setBlock($pos, $moving->getMovingBlock());
                     $tile = $world->getTile($pos);
                     $tag = $moving->getMovingEntity();
-                    if ($tile !== null && $tag !== null) $tile->readSaveData($tag);
+                    if($tile !== null && $tag !== null) $tile->readSaveData($tag);
 
                     $block = $world->getBlock($pos);
-                    if ($block instanceof IRedstoneComponent) $block->onRedstoneUpdate();
+                    if($block instanceof IRedstoneComponent) $block->onRedstoneUpdate();
                     BlockUpdateHelper::updateAroundRedstone($block);
                 }
             }
@@ -352,7 +357,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
             $this->setHideAttachedBlocks([]);
             $this->writeStateToWorld();
             return false;
-        } else if ($state === 1) return $this->push();
+        }elseif($state === 1) return $this->push();
         else return false;
         return true;
     }

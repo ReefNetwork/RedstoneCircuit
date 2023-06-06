@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\TrappedChest;
@@ -13,46 +15,47 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\tile\Chest;
+use function min;
 
-class BlockTrappedChest extends TrappedChest implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockTrappedChest extends TrappedChest implements IRedstoneComponent, ILinkRedstoneWire{
     use AnalogRedstoneSignalEmitterTrait;
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function readStateFromWorld(): void {
-        parent::readStateFromWorld();
+    public function readStateFromWorld() : \pocketmine\block\Block{
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if ($tile instanceof Chest) {
+        if($tile instanceof Chest){
             $this->setOutputSignalStrength(min($tile->getInventory()->getViewerCount(), 15));
         }
+        return parent::readStateFromWorld();
     }
 
-    public function onScheduledUpdate(): void {
+    public function onScheduledUpdate() : void{
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof Chest) return;
+        if(!$tile instanceof Chest) return;
 
         $signal = min($tile->getInventory()->getViewerCount(), 15);
-        if ($this->getOutputSignalStrength() === $signal) return;
+        if($this->getOutputSignalStrength() === $signal) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstoneSignalUpdateEvent($this, $signal, $this->getOutputSignalStrength());
             $event->call();
             $signal = $event->getNewSignal();
-            if ($this->getOutputSignalStrength() === $signal) return;
+            if($this->getOutputSignalStrength() === $signal) return;
         }
         $this->setOutputSignalStrength($signal);
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::DOWN);
     }
 
-    public function getStrongPower(int $face): int {
+    public function getStrongPower(int $face) : int{
         return $face === Facing::UP ? $this->getOutputSignalStrength() : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->getOutputSignalStrength();
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->getOutputSignalStrength() !== 0;
     }
 }

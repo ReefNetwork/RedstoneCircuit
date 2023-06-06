@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\event;
 
 use pocketmine\block\Hopper;
@@ -10,7 +12,7 @@ use pocketmine\event\CancellableTrait;
 use pocketmine\inventory\Inventory;
 use pocketmine\item\Item;
 
-class HopperMoveItemEvent extends BlockEvent implements Cancellable {
+class HopperMoveItemEvent extends BlockEvent implements Cancellable{
     use CancellableTrait;
 
     private Hopper $hopper;
@@ -19,36 +21,36 @@ class HopperMoveItemEvent extends BlockEvent implements Cancellable {
     private ?Jukebox $targetJukebox = null;
     private Item $item;
 
-    public function __construct(Hopper $hopper, Inventory $source, Inventory|Jukebox $target, Item $item) {
+    public function __construct(Hopper $hopper, Inventory $source, Inventory|Jukebox $target, Item $item){
         parent::__construct($hopper);
 
         $this->hopper = $hopper;
         $this->source = $source;
-        if ($target instanceof Inventory) {
+        if($target instanceof Inventory){
             $this->targetInventory = $target;
-        } else {
+        }else{
             $this->targetJukebox = $target;
         }
         $this->item = $item;
     }
 
-    public function getHopper(): Hopper {
+    public function getHopper() : Hopper{
         return $this->hopper;
     }
 
-    public function getSourceInventory(): Inventory {
+    public function getSourceInventory() : Inventory{
         return $this->source;
     }
 
-    public function getTargetInventory(): ?Inventory {
+    public function getTargetInventory() : ?Inventory{
         return $this->targetInventory;
     }
 
-    public function getJukebox(): ?Jukebox {
+    public function getJukebox() : ?Jukebox{
         return $this->targetJukebox;
     }
 
-    public function getItem(): Item {
+    public function getItem() : Item{
         return $this->item;
     }
 }

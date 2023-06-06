@@ -15,13 +15,13 @@ use pocketmine\math\AxisAlignedBB;
 use pocketmine\math\Facing;
 use pocketmine\Server;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityHopper;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\event\HopperMoveItemEvent;
 use tedo0627\redstonecircuit\event\HopperPickupItemEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\Hopper as HopperTile;
 
 class BlockHopper extends Hopper implements IRedstoneComponent {
     use RedstoneComponentTrait;
@@ -32,7 +32,7 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityHopper) return;
+        if (!$tile instanceof HopperTile) return;
 
         $this->setTransferCooldown($tile->getTransferCooldown());
         $this->setTickedGameTime($tile->getTickedGameTime());
@@ -41,7 +41,7 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityHopper);
+        assert($tile instanceof HopperTile);
         $tile->setTransferCooldown($this->getTransferCooldown());
         $tile->setTickedGameTime($this->getTickedGameTime());
     }
@@ -71,7 +71,7 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
 
     protected function ejectItem(): bool {
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof BlockEntityHopper) return false;
+        if (!$hopper instanceof HopperTile) return false;
 
         $target = $this->getPosition()->getWorld()->getTile($this->getSide($this->getFacing())->getPosition());
         $juke = $target instanceof Jukebox;
@@ -187,7 +187,7 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
         if ($slot === null) return false;
 
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof BlockEntityHopper) return false;
+        if (!$hopper instanceof HopperTile) return false;
 
         $pop = $item->pop();
         $inventory = $hopper->getInventory();
@@ -206,7 +206,7 @@ class BlockHopper extends Hopper implements IRedstoneComponent {
 
     protected function suckEntity(): bool {
         $hopper = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$hopper instanceof BlockEntityHopper) return false;
+        if (!$hopper instanceof HopperTile) return false;
 
         $inventory = $hopper->getInventory();
         $pos = $this->getPosition();

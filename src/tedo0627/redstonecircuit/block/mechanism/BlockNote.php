@@ -3,7 +3,6 @@
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Block;
-use pocketmine\block\BlockLegacyIds as Ids;
 use pocketmine\block\Note;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\item\Item;
@@ -16,11 +15,11 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\NoteInstrument;
 use pocketmine\world\sound\NoteSound;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityNote;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\NoteBlock;
 
 class BlockNote extends Note implements IRedstoneComponent {
     use PoweredByRedstoneTrait;
@@ -29,13 +28,13 @@ class BlockNote extends Note implements IRedstoneComponent {
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof BlockEntityNote) $this->setPowered($tile->isPowered());
+        if($tile instanceof NoteBlock) $this->setPowered($tile->isPowered());
     }
 
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityNote);
+        assert($tile instanceof NoteBlock);
         $tile->setPowered($this->isPowered());
     }
 

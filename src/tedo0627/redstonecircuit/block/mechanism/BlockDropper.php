@@ -5,16 +5,16 @@ namespace tedo0627\redstonecircuit\block\mechanism;
 use pocketmine\block\tile\Container;
 use pocketmine\item\Item;
 use pocketmine\world\sound\ClickSound;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDispenser;
 use tedo0627\redstonecircuit\event\BlockDispenseEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\ClickFailSound;
+use tedo0627\redstonecircuit\tile\Dispenser;
 
 class BlockDropper extends BlockDispenser {
 
     public function onScheduledUpdate(): void {
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityDispenser) return;
+        if (!$tile instanceof Dispenser) return;
 
         $inventory = $tile->getInventory();
         $slot = $inventory->getRandomSlot();

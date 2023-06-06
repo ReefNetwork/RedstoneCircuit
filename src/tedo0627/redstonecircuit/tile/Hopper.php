@@ -1,11 +1,10 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
-use pocketmine\block\tile\Hopper;
 use pocketmine\nbt\tag\CompoundTag;
 
-class BlockEntityHopper extends Hopper {
+class Hopper extends \pocketmine\block\tile\Hopper {
 
     protected int $transferCooldown = 0;
     protected int $tickedGameTime = 0;

@@ -12,12 +12,6 @@ use pocketmine\block\BlockTypeIds;
 use pocketmine\block\BlockTypeInfo;
 use pocketmine\item\ToolTier;
 use pocketmine\utils\CloningRegistryTrait;
-use tedo0627\redstonecircuit\block\entity\BlockEntityCommand;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDispenser;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDropper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityMoving;
-use tedo0627\redstonecircuit\block\entity\BlockEntityObserver;
-use tedo0627\redstonecircuit\block\entity\BlockEntityPistonArm;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 use tedo0627\redstonecircuit\block\mechanism\BlockDropper;
@@ -27,6 +21,12 @@ use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
 use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
 use tedo0627\redstonecircuit\block\power\BlockObserver;
 use tedo0627\redstonecircuit\block\power\BlockTarget;
+use tedo0627\redstonecircuit\tile\CommandBlock;
+use tedo0627\redstonecircuit\tile\Dispenser;
+use tedo0627\redstonecircuit\tile\Dropper;
+use tedo0627\redstonecircuit\tile\MovingBlock;
+use tedo0627\redstonecircuit\tile\Observer;
+use tedo0627\redstonecircuit\tile\PistonArm;
 
 /**
  * @generate-registry-docblock
@@ -66,18 +66,18 @@ final class ExtraVanillaBlocks{
 
 	protected static function setup() : void{
 		$indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
-		self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityCommand::class, CommandBlockType::NORMAL()), "Command Block", $indestructibleTypeInfo));
+		self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class, CommandBlockType::NORMAL()), "Command Block", $indestructibleTypeInfo));
 		$dispenserTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
-		self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityDispenser::class), "Dispenser", $dispenserTypeInfo));
-		self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityDropper::class), "Dropper", $dispenserTypeInfo));
+		self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), Dispenser::class), "Dispenser", $dispenserTypeInfo));
+		self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), Dropper::class), "Dropper", $dispenserTypeInfo));
 		$pistonTypeInfo = new BlockTypeInfo(new BlockBreakInfo(1.5, BlockToolType::PICKAXE));
-		self::register("piston", new BlockPiston(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityPistonArm::class), "Piston", $pistonTypeInfo));
-		self::register("sticky_piston", new BlockStickyPiston(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityPistonArm::class), "Sticky Piston", $pistonTypeInfo));
+		self::register("piston", new BlockPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Piston", $pistonTypeInfo));
+		self::register("sticky_piston", new BlockStickyPiston(new BlockIdentifier(BlockTypeIds::newId(), PistonArm::class), "Sticky Piston", $pistonTypeInfo));
 		self::register("piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Piston Arm Collision", $pistonTypeInfo));
 		self::register("sticky_piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Sticky Piston Arm Collision", $pistonTypeInfo));
-		self::register("moving_block", new BlockMoving(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityMoving::class), "Moving Block", $indestructibleTypeInfo));
+		self::register("moving_block", new BlockMoving(new BlockIdentifier(BlockTypeIds::newId(), MovingBlock::class), "Moving Block", $indestructibleTypeInfo));
 		$reusableTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
-		self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId(), BlockEntityObserver::class), "Observer", $reusableTypeInfo));
+		self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId(), Observer::class), "Observer", $reusableTypeInfo));
 		self::register("target", new BlockTarget(new BlockIdentifier(BlockTypeIds::newId()), "Target", $reusableTypeInfo));
 	}
 }

@@ -1,11 +1,10 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
-use pocketmine\block\tile\Skull;
 use pocketmine\nbt\tag\CompoundTag;
 
-class BlockEntitySkull extends Skull {
+class MobHead extends \pocketmine\block\tile\MobHead {
 
     private bool $mouthMoving = false;
 

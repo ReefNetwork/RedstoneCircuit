@@ -12,7 +12,6 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityTarget;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
@@ -27,16 +26,11 @@ class BlockTarget extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
 
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
-        $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityTarget) return;
-
         $this->setOutputSignalStrength($tile->getOutputSignalStrength());
     }
 
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
-        $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityTarget);
 
         $tile->setOutputSignalStrength($this->getOutputSignalStrength());
     }

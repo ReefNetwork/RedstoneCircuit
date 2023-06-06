@@ -4,11 +4,10 @@ namespace tedo0627\redstonecircuit\block\mechanism;
 
 use InvalidArgumentException;
 use pocketmine\block\Block;
-use pocketmine\block\BlockBreakInfo;
 use pocketmine\block\BlockIdentifier;
+use pocketmine\block\BlockTypeInfo;
 use pocketmine\block\Opaque;
 use pocketmine\block\utils\AnyFacingTrait;
-use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\entity\Entity;
 use pocketmine\entity\Location;
@@ -18,8 +17,6 @@ use pocketmine\entity\projectile\ExperienceBottle;
 use pocketmine\entity\projectile\Snowball;
 use pocketmine\entity\projectile\SplashPotion;
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
-use pocketmine\item\ItemIds;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -37,13 +34,13 @@ use tedo0627\redstonecircuit\block\dispenser\GlassBottleDispenseBehavior;
 use tedo0627\redstonecircuit\block\dispenser\ProjectileDispenseBehavior;
 use tedo0627\redstonecircuit\block\dispenser\ShulkerBoxDispenseBehavior;
 use tedo0627\redstonecircuit\block\dispenser\TNTDispenseBehavior;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDispenser;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockDispenseEvent;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\ClickFailSound;
+use tedo0627\redstonecircuit\tile\Dispenser;
 
 class BlockDispenser extends Opaque implements IRedstoneComponent {
     use AnyFacingTrait;
@@ -74,7 +71,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof BlockEntityDispenser) {
+        if($tile instanceof Dispenser) {
             $this->setInitialized($tile->isInitialized());
         }
     }
@@ -82,7 +79,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityDispenser);
+        assert($tile instanceof Dispenser);
         $tile->setInitialized($this->isInitialized());
     }
 
@@ -110,7 +107,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
         if ($player === null) return false;
 
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityDispenser) return true;
+        if (!$tile instanceof Dispenser) return true;
 
         $inventory = $tile->getInventory();
         $player->setCurrentWindow($inventory);
@@ -129,7 +126,7 @@ class BlockDispenser extends Opaque implements IRedstoneComponent {
         }
 
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityDispenser) return;
+        if (!$tile instanceof Dispenser) return;
 
         $inventory = $tile->getInventory();
         $slot = $inventory->getRandomSlot();

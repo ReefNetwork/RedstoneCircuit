@@ -3,14 +3,10 @@
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Block;
-use pocketmine\block\BlockFactory;
-use pocketmine\block\BlockLegacyIds as Ids;
 use pocketmine\block\Opaque;
 use pocketmine\block\utils\AnyFacingTrait;
-use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\block\VanillaBlocks;
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
 use pocketmine\math\Axis;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
@@ -18,8 +14,6 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityPistonArm;
-use tedo0627\redstonecircuit\block\entity\IgnorePiston;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
@@ -31,6 +25,8 @@ use tedo0627\redstonecircuit\event\BlockPistonRetractEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\PistonInSound;
 use tedo0627\redstonecircuit\sound\PistonOutSound;
+use tedo0627\redstonecircuit\tile\IgnorePiston;
+use tedo0627\redstonecircuit\tile\PistonArm;
 
 class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWire {
     use AnyFacingTrait;
@@ -49,7 +45,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityPistonArm) return;
+        if (!$tile instanceof PistonArm) return;
 
         $this->setProgress($tile->getProgress());
         $this->setLastProgress($tile->getLastProgress());
@@ -63,7 +59,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityPistonArm);
+        assert($tile instanceof PistonArm);
 
         $tile->setProgress($this->getProgress());
         $tile->setLastProgress($this->getLastProgress());

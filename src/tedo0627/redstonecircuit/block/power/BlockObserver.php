@@ -5,7 +5,6 @@ namespace tedo0627\redstonecircuit\block\power;
 use pocketmine\block\Block;
 use pocketmine\block\Opaque;
 use pocketmine\block\utils\AnyFacingTrait;
-use pocketmine\block\utils\BlockDataSerializer;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\item\Item;
 use pocketmine\math\Facing;
@@ -14,12 +13,12 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityObserver;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\Observer;
 
 class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneWire {
     use AnyFacingTrait;
@@ -43,7 +42,7 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof BlockEntityObserver) {
+        if($tile instanceof Observer) {
             $this->setSideBlockId($tile->getBlockId());
             $this->setSideStateMeta($tile->getStateMeta());
             $this->setInitialized($tile->isInitialized());
@@ -53,7 +52,7 @@ class BlockObserver extends Opaque implements IRedstoneComponent, ILinkRedstoneW
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityObserver);
+        assert($tile instanceof Observer);
         $tile->setBlockId($this->getSideBlockId());
         $tile->setStateMeta($this->getSideStateMeta());
         $tile->setInitialized($this->isInitialized());

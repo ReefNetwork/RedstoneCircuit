@@ -3,8 +3,8 @@
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Transparent;
-use tedo0627\redstonecircuit\block\entity\BlockEntityMoving;
 use tedo0627\redstonecircuit\block\MovingBlockTrait;
+use tedo0627\redstonecircuit\tile\MovingBlock;
 
 class BlockMoving extends Transparent {
     use MovingBlockTrait;
@@ -12,7 +12,7 @@ class BlockMoving extends Transparent {
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityMoving) return;
+        if (!$tile instanceof MovingBlock) return;
 
         $this->setExpanding($tile->isExpanding());
 
@@ -28,7 +28,7 @@ class BlockMoving extends Transparent {
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityMoving);
+        assert($tile instanceof MovingBlock);
 
         $tile->setExpanding($this->isExpanding());
 

@@ -6,13 +6,13 @@ use pocketmine\block\TrappedChest;
 use pocketmine\block\utils\AnalogRedstoneSignalEmitterTrait;
 use pocketmine\math\Facing;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityChest;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstoneSignalUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\Chest;
 
 class BlockTrappedChest extends TrappedChest implements IRedstoneComponent, ILinkRedstoneWire {
     use AnalogRedstoneSignalEmitterTrait;
@@ -22,14 +22,14 @@ class BlockTrappedChest extends TrappedChest implements IRedstoneComponent, ILin
     public function readStateFromWorld(): void {
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if ($tile instanceof BlockEntityChest) {
+        if ($tile instanceof Chest) {
             $this->setOutputSignalStrength(min($tile->getInventory()->getViewerCount(), 15));
         }
     }
 
     public function onScheduledUpdate(): void {
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if (!$tile instanceof BlockEntityChest) return;
+        if (!$tile instanceof Chest) return;
 
         $signal = min($tile->getInventory()->getViewerCount(), 15);
         if ($this->getOutputSignalStrength() === $signal) return;

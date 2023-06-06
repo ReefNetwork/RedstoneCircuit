@@ -1,12 +1,12 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\math\Vector3;
 use pocketmine\world\World;
 use tedo0627\redstonecircuit\block\inventory\DropperInventory;
 
-class BlockEntityDropper extends BlockEntityDispenser {
+class Dropper extends Dispenser {
 
     public function __construct(World $world, Vector3 $pos) {
         parent::__construct($world, $pos);

@@ -1,12 +1,12 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Tile;
 use pocketmine\nbt\tag\CompoundTag;
 use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 
-class BlockEntityObserver extends Tile implements IgnorePiston {
+class Observer extends Tile implements IgnorePiston {
     use BlockEntityInitializeTrait;
 
     protected int $blockId = -1;

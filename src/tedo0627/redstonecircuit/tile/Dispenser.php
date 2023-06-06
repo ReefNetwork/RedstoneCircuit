@@ -1,6 +1,6 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Container;
 use pocketmine\block\tile\ContainerTrait;
@@ -13,7 +13,7 @@ use pocketmine\world\World;
 use tedo0627\redstonecircuit\block\BlockEntityInitializeTrait;
 use tedo0627\redstonecircuit\block\inventory\DispenserInventory;
 
-class BlockEntityDispenser extends Spawnable implements Container, Nameable {
+class Dispenser extends Spawnable implements Container, Nameable {
     use BlockEntityInitializeTrait;
     use NameableTrait;
     use ContainerTrait;

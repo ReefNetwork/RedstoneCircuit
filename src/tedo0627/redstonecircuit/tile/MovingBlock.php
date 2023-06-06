@@ -1,12 +1,12 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Spawnable;
 use pocketmine\nbt\tag\CompoundTag;
 use tedo0627\redstonecircuit\block\MovingBlockTrait;
 
-class BlockEntityMoving extends Spawnable {
+class MovingBlock extends Spawnable {
     use MovingBlockTrait;
 
     public function readSaveData(CompoundTag $nbt): void {

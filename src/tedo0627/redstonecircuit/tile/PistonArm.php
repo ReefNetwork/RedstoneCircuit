@@ -1,6 +1,6 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Spawnable;
 use pocketmine\nbt\NBT;
@@ -9,7 +9,7 @@ use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\ListTag;
 use tedo0627\redstonecircuit\block\PistonTrait;
 
-class BlockEntityPistonArm extends Spawnable {
+class PistonArm extends Spawnable implements IgnorePiston{
     use PistonTrait;
 
     protected bool $sticky = false;

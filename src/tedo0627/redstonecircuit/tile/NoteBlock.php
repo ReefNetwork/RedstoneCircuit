@@ -1,11 +1,10 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+namespace tedo0627\redstonecircuit\tile;
 
-use pocketmine\block\tile\Note;
 use pocketmine\nbt\tag\CompoundTag;
 
-class BlockEntityNote extends Note {
+class NoteBlock extends \pocketmine\block\tile\Note {
 
     private bool $powered = false;
 

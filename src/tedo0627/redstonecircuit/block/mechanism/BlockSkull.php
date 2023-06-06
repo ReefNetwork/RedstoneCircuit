@@ -5,27 +5,27 @@ namespace tedo0627\redstonecircuit\block\mechanism;
 use pocketmine\block\Skull;
 use pocketmine\block\utils\SkullType;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntitySkull;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\MobHead;
 
 class BlockSkull extends Skull implements IRedstoneComponent {
     use RedstoneComponentTrait;
 
     private bool $mouthMoving = false;
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld(): \pocketmine\block\Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if ($tile instanceof BlockEntitySkull) $this->setMouthMoving($tile->isMouthMoving());
+        if ($tile instanceof MobHead) $this->setMouthMoving($tile->isMouthMoving());
     }
 
     public function writeStateToWorld(): void {
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntitySkull);
+        assert($tile instanceof MobHead);
         $tile->setMouthMoving($this->isMouthMoving());
     }
 

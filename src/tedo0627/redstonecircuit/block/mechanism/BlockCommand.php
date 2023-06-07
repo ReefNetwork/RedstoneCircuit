@@ -101,7 +101,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
 
         $this->setPowered($powered);
         if($powered){
-			$this->onScheduledUpdate();
+            $this->onScheduledUpdate();
         }
     }
 

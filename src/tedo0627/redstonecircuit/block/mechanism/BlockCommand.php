@@ -16,7 +16,7 @@ use pocketmine\math\Vector3;
 use pocketmine\permission\DefaultPermissions;
 use pocketmine\player\Player;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\CommandBlockType;
+use tedo0627\redstonecircuit\block\enums\CommandBlockType;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;

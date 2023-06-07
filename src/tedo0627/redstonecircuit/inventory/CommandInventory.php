@@ -9,7 +9,7 @@ use pocketmine\block\inventory\BlockInventoryTrait;
 use pocketmine\inventory\BaseInventory;
 use pocketmine\item\Item;
 use pocketmine\world\Position;
-use tedo0627\redstonecircuit\block\CommandBlockType;
+use tedo0627\redstonecircuit\block\enums\CommandBlockType;
 
 class CommandInventory extends BaseInventory implements BlockInventory{
     use BlockInventoryTrait;

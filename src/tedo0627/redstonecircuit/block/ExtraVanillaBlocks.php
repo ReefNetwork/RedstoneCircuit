@@ -31,16 +31,18 @@ use tedo0627\redstonecircuit\tile\PistonArm;
 /**
  * @generate-registry-docblock
  *
- * @method static BlockTarget TARGET()
- * @method static BlockObserver OBSERVER()
- * @method static BlockMoving MOVING_BLOCK()
- * @method static BlockPiston PISTON()
- * @method static BlockStickyPiston STICKY_PISTON()
- * @method static BlockPistonArmCollision PISTON_ARM_COLLISION()
- * @method static BlockPistonArmCollision STICKY_PISTON_ARM_COLLISION()
  * @method static BlockCommand COMMAND_BLOCK()
+ * @method static BlockCommand CHAIN_COMMAND_BLOCK()
  * @method static BlockDispenser DISPENSER()
  * @method static BlockDropper DROPPER()
+ * @method static BlockMoving MOVING_BLOCK()
+ * @method static BlockObserver OBSERVER()
+ * @method static BlockPiston PISTON()
+ * @method static BlockPistonArmCollision PISTON_ARM_COLLISION()
+ * @method static BlockCommand REPEATING_COMMAND_BLOCK()
+ * @method static BlockStickyPiston STICKY_PISTON()
+ * @method static BlockPistonArmCollision STICKY_PISTON_ARM_COLLISION()
+ * @method static BlockTarget TARGET()
  */
 final class ExtraVanillaBlocks{
     use CloningRegistryTrait;
@@ -66,7 +68,9 @@ final class ExtraVanillaBlocks{
 
     protected static function setup() : void{
         $indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
-        self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class, CommandBlockType::NORMAL()), "Command Block", $indestructibleTypeInfo));
+        self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Command Block", $indestructibleTypeInfo, CommandBlockType::IMPULSE()));
+        self::register("repeating_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Repeating Command Block", $indestructibleTypeInfo, CommandBlockType::REPEATING()));
+        self::register("chain_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Chain Command Block", $indestructibleTypeInfo, CommandBlockType::CHAIN()));
         $dispenserTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
         self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), Dispenser::class), "Dispenser", $dispenserTypeInfo));
         self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), Dropper::class), "Dropper", $dispenserTypeInfo));

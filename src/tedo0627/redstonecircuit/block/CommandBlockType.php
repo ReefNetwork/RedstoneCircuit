@@ -8,6 +8,10 @@ use pocketmine\utils\EnumTrait;
 
 /**
  * @generate-registry-docblock
+ *
+ * @method static CommandBlockType CHAIN()
+ * @method static CommandBlockType IMPULSE()
+ * @method static CommandBlockType REPEATING()
  */
 final class CommandBlockType{
     use EnumTrait {
@@ -16,9 +20,9 @@ final class CommandBlockType{
 
     protected static function setup() : void{
         self::registerAll(
-            new self("normal"),
+			new self("chain"),
+            new self("impulse"),
             new self("repeating"),
-            new self("chain"),
         );
     }
 

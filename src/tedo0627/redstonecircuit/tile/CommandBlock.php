@@ -34,6 +34,7 @@ use tedo0627\redstonecircuit\block\utils\AnyFacingOppositePlayerTrait;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use function array_map;
 use function explode;
+use function max;
 use function trim;
 use const PHP_INT_MAX;
 
@@ -46,11 +47,13 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     public const TAG_LAST_OUTPUT_PARAMS = "LastOutputParams"; // TAG_LIST<TAG_STRING>
     public const TAG_AUTO = "auto"; // TAG_BYTE
     public const TAG_CONDITION_MET = "conditionMet"; // TAG_BYTE
+    public const TAG_EXECUTE_ON_FIRST_TICK = "ExecuteOnFirstTick"; // TAG_BYTE
     public const TAG_KEEP_PACKED = "keepPacked"; // TAG_BYTE
     public const TAG_LP_CONDIONAL_MODE = "LPCondionalMode"; // TAG_BYTE
     public const TAG_LP_REDSTONE_MODE = "LPRedstoneMode"; // TAG_BYTE
     public const TAG_POWERED = "powered"; // TAG_BYTE
     public const TAG_TRACK_OUTPUT = "TrackOutput"; // TAG_BYTE
+    public const TAG_TICK_DELAY = "TickDelay"; // TAG_INT
     public const TAG_UPDATE_LAST_EXECUTION = "UpdateLastExecution"; // TAG_BYTE
     public const TAG_LP_COMMAND_MODE = "LPCommandMode"; // TAG_INT
     public const TAG_SUCCESS_COUNT = "SuccessCount"; // TAG_INT
@@ -73,7 +76,9 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     protected int $successCount = 0;
     protected bool $trackOutput = true;
     protected bool $updateLastExecution = true; // not to be saved
-    protected int $lastExecution = -1; // not to be saved
+    protected int $lastExecution = -1;
+    protected int $tickDelay = 1;
+    protected bool $executeOnFirstTick = true;
     protected int $version = 4;
 
     public function __construct(World $world, Vector3 $pos){
@@ -117,6 +122,10 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
 
     public function isLpCondionalMode() : bool{
         return $this->lpCondionalMode;
+    }
+
+    public function getTickDelay() : int{
+        return $this->tickDelay;
     }
 
     protected function markConditionMet() : bool{
@@ -175,7 +184,7 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
             }
             $facing = $block->getFacing();
 
-            $tile = $world->getTile($pos);
+            $tile = $world->getTile($block->getPosition());
             if(!$tile instanceof CommandBlock || !$tile->getCommandBlockType()->equals(CommandBlockType::CHAIN())) {
                 break;
             }
@@ -207,6 +216,9 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $this->timings->startTiming();
 
         if($this->getCommandBlockType()->equals(CommandBlockType::REPEATING())){
+            if(Server::getInstance()->getTick() < $this->lastExecution + $this->tickDelay){
+                return true;
+            }
             $this->markConditionMet();
             if($this->conditionMet) {
                 $this->execute();
@@ -235,18 +247,20 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $this->conditionMet = $nbt->getByte(self::TAG_CONDITION_MET, 0) === 1;
         $this->command = $nbt->getString(self::TAG_COMMAND, "");
         $this->loadName($nbt);
+        $this->executeOnFirstTick = $nbt->getByte(self::TAG_EXECUTE_ON_FIRST_TICK, 0) === 1;
         //$this->keepPacked = $nbt->getByte(self::TAG_KEEP_PACKED, 0) === 1; // Java edition only
         $this->lastOutput = $nbt->getString(self::TAG_LAST_OUTPUT, "");
         $this->lastOutputParams = $nbt->getListTag(self::TAG_LAST_OUTPUT_PARAMS)?->getAllValues() ?? [];
         $this->lpCondionalMode = $nbt->getByte(self::TAG_LP_CONDIONAL_MODE, 0) === 1;
         $this->commandBlockType = match($nbt->getInt(self::TAG_LP_COMMAND_MODE, 0)) {
-            CommandBlockType::IMPULSE()->lpCommandMode => CommandBlockType::IMPULSE(),
             CommandBlockType::REPEATING()->lpCommandMode => CommandBlockType::REPEATING(),
             CommandBlockType::CHAIN()->lpCommandMode => CommandBlockType::CHAIN(),
+            default => CommandBlockType::IMPULSE(),
         };
         $this->lpRedstoneMode = $nbt->getByte(self::TAG_LP_REDSTONE_MODE, 0) === 1;
         $this->powered = $nbt->getByte(self::TAG_POWERED, 0) === 1;
         $this->successCount = $nbt->getInt(self::TAG_SUCCESS_COUNT, 0);
+        $this->tickDelay = $nbt->getInt(self::TAG_TICK_DELAY, 0);
         $this->trackOutput = $nbt->getByte(self::TAG_TRACK_OUTPUT, 0) === 1 || $nbt->getByte(self::TAG_UPDATE_LAST_EXECUTION, 0) === 1;
         $this->version = $nbt->getInt(self::TAG_VERSION, 4);
     }
@@ -255,6 +269,8 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $nbt->setByte(self::TAG_AUTO, $this->auto ? 1 : 0);
         $nbt->setByte(self::TAG_CONDITION_MET, $this->conditionMet ? 1 : 0);
         $nbt->setString(self::TAG_COMMAND, $this->command);
+        $this->saveName($nbt);
+        $nbt->setByte(self::TAG_EXECUTE_ON_FIRST_TICK, $this->executeOnFirstTick ? 1 : 0);
         //$nbt->setByte(self::TAG_KEEP_PACKED, $this->keepPacked ? 1 : 0); // Java edition only
         $nbt->setString(self::TAG_LAST_OUTPUT, $this->lastOutput);
         $nbt->setTag(self::TAG_LAST_OUTPUT_PARAMS, new ListTag(array_map(static fn(string $param) => new StringTag($param), $this->lastOutputParams), NBT::TAG_String));
@@ -263,6 +279,7 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $nbt->setByte(self::TAG_LP_REDSTONE_MODE, $this->lpRedstoneMode ? 1 : 0);
         $nbt->setByte(self::TAG_POWERED, $this->powered ? 1 : 0);
         $nbt->setInt(self::TAG_SUCCESS_COUNT, $this->successCount);
+        $nbt->setInt(self::TAG_TICK_DELAY, $this->tickDelay);
         $nbt->setByte(self::TAG_TRACK_OUTPUT, $this->trackOutput ? 1 : 0);
         $nbt->setInt(self::TAG_VERSION, $this->version);
     }
@@ -309,7 +326,9 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         bool $isRedstoneMode,
         string $command,
         bool $trackOutput,
-        string $lastOutput
+        string $lastOutput,
+        bool $executeOnFirstTick,
+        int $tickDelay
     ) : void{
         $this->setName($name);
         $this->setCommandBlockType($commandBlockMode);
@@ -322,6 +341,8 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         }
         $this->trackOutput = $trackOutput;
         $this->lastOutput = $lastOutput;
+        $this->executeOnFirstTick = $executeOnFirstTick;
+        $this->tickDelay = max($tickDelay, 1);
     }
 
 }

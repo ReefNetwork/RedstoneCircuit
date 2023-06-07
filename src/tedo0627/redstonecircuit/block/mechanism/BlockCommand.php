@@ -87,7 +87,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         parent::readStateFromWorld();
         $commandBlockTile = $this->position->getWorld()->getTile($this->position);
         if($commandBlockTile instanceof CommandBlock){
-            $this->conditionalMode = $commandBlockTile->isConditionalMode();
+            $this->conditionalMode = $commandBlockTile->isLPCondionalMode();
         }
 
         return $this;
@@ -97,7 +97,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         parent::writeStateToWorld();
         $commandBlockTile = $this->position->getWorld()->getTile($this->position);
         if($commandBlockTile instanceof CommandBlock){
-            $commandBlockTile->setConditionalMode($this->conditionalMode);
+            $commandBlockTile->setLPCondionalMode($this->conditionalMode);
         }
     }
 }

@@ -111,7 +111,13 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         return $this;
     }
 
-    abstract public function setCommandBlockType(CommandBlockType $type) : CommandBlock;
+    public function setLPCondionalMode(bool $lpCondionalMode) : void{
+        $this->lpCondionalMode = $lpCondionalMode;
+    }
+
+    public function isLpCondionalMode() : bool{
+        return $this->lpCondionalMode;
+    }
 
     protected function markConditionMet() : bool{
         $this->conditionMet = true;

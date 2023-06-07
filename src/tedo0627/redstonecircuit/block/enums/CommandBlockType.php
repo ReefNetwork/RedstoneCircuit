@@ -20,13 +20,13 @@ final class CommandBlockType{
 
     protected static function setup() : void{
         self::registerAll(
-			new self("chain"),
-            new self("impulse"),
-            new self("repeating"),
+            new self("chain", 2),
+            new self("impulse", 0),
+            new self("repeating", 1),
         );
     }
 
-    private function __construct(string $enumName){
+    private function __construct(string $enumName, readonly public int $lpCommandMode){
         $this->Enum___construct($enumName);
     }
 }

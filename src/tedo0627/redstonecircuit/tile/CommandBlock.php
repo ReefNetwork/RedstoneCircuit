@@ -59,6 +59,7 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     public const TAG_LAST_OUTPUT = "LastOutput"; // TAG_STRING
 
     protected CommandInventory $inventory;
+    protected CommandBlockType $commandBlockType;
     protected bool $auto = false;
     protected bool $conditionMet = false;
     protected string $command = "";
@@ -67,7 +68,6 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     /** @var string[] $lastOutputParams */
     protected array $lastOutputParams = [];
     protected bool $lpCondionalMode = false;
-    protected int $lpCommandMode = 0;
     protected bool $lpRedstoneMode = false;
     protected bool $powered = false;
     protected int $successCount = 0;
@@ -102,7 +102,14 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         return $this->getInventory();
     }
 
-    abstract public function getCommandBlockType() : CommandBlockType;
+    public function getCommandBlockType() : CommandBlockType {
+        return $this->commandBlockType;
+    }
+
+    public function setCommandBlockType(CommandBlockType $type) : CommandBlock {
+        $this->commandBlockType = $type;
+        return $this;
+    }
 
     abstract public function setCommandBlockType(CommandBlockType $type) : CommandBlock;
 
@@ -226,7 +233,11 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $this->lastOutput = $nbt->getString(self::TAG_LAST_OUTPUT, "");
         $this->lastOutputParams = $nbt->getListTag(self::TAG_LAST_OUTPUT_PARAMS)?->getAllValues() ?? [];
         $this->lpCondionalMode = $nbt->getByte(self::TAG_LP_CONDIONAL_MODE, 0) === 1;
-        $this->lpCommandMode = $nbt->getInt(self::TAG_LP_COMMAND_MODE, 0);
+        $this->commandBlockType = match($nbt->getInt(self::TAG_LP_COMMAND_MODE, 0)) {
+            CommandBlockType::IMPULSE()->lpCommandMode => CommandBlockType::IMPULSE(),
+            CommandBlockType::REPEATING()->lpCommandMode => CommandBlockType::REPEATING(),
+            CommandBlockType::CHAIN()->lpCommandMode => CommandBlockType::CHAIN(),
+        };
         $this->lpRedstoneMode = $nbt->getByte(self::TAG_LP_REDSTONE_MODE, 0) === 1;
         $this->powered = $nbt->getByte(self::TAG_POWERED, 0) === 1;
         $this->successCount = $nbt->getInt(self::TAG_SUCCESS_COUNT, 0);
@@ -242,7 +253,7 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
         $nbt->setString(self::TAG_LAST_OUTPUT, $this->lastOutput);
         $nbt->setTag(self::TAG_LAST_OUTPUT_PARAMS, new ListTag(array_map(static fn(string $param) => new StringTag($param), $this->lastOutputParams), NBT::TAG_String));
         $nbt->setByte(self::TAG_LP_CONDIONAL_MODE, $this->lpCondionalMode ? 1 : 0);
-        $nbt->setInt(self::TAG_LP_COMMAND_MODE, $this->lpCommandMode);
+        $nbt->setInt(self::TAG_LP_COMMAND_MODE, $this->commandBlockType->lpCommandMode);
         $nbt->setByte(self::TAG_LP_REDSTONE_MODE, $this->lpRedstoneMode ? 1 : 0);
         $nbt->setByte(self::TAG_POWERED, $this->powered ? 1 : 0);
         $nbt->setInt(self::TAG_SUCCESS_COUNT, $this->successCount);

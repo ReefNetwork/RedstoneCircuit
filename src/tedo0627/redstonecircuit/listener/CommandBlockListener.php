@@ -21,7 +21,7 @@ class CommandBlockListener implements Listener{
         if($player === null) return;
         if(!$packet->isBlock) return;
 
-        if(!$player->isCreative() || !$player->hasPermission(DefaultPermissions::ROOT_OPERATOR)) return;
+        if(!$player->isCreative() || !$player->hasPermission(DefaultPermissions::ROOT_OPERATOR)) return; // TODO: better permission check
 
         $pos = $packet->blockPosition;
         $world = $player->getWorld();

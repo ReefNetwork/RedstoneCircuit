@@ -54,6 +54,10 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         return true;
     }
 
+    public function onNearbyBlockChange() : void{
+        $this->onScheduledUpdate();
+    }
+
     public function onScheduledUpdate() : void{
         $world = $this->position->getWorld();
         $commandBlockTile = $world->getTile($this->position);

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace tedo0627\redstonecircuit\tile;
 
+use BadMethodCallException;
 use pocketmine\block\tile\Nameable;
 use pocketmine\block\tile\NameableTrait;
 use pocketmine\block\tile\Spawnable;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\command\CommandSender;
 use pocketmine\command\utils\InvalidCommandSyntaxException;
-use pocketmine\event\server\CommandEvent;
-use pocketmine\lang\KnownTranslationFactory;
-use pocketmine\math\Facing;
+use pocketmine\lang\Language;
+use pocketmine\lang\Translatable;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\NBT;
 use pocketmine\nbt\tag\CompoundTag;
@@ -22,20 +22,20 @@ use pocketmine\permission\DefaultPermissions;
 use pocketmine\permission\PermissibleBase;
 use pocketmine\permission\PermissibleDelegateTrait;
 use pocketmine\Server;
+use pocketmine\utils\Limits;
+use pocketmine\utils\Terminal;
 use pocketmine\utils\TextFormat;
+use pocketmine\world\Position;
 use pocketmine\world\World;
-use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\CommandBlockType;
+use tedo0627\redstonecircuit\block\enums\CommandBlockType;
 use tedo0627\redstonecircuit\block\inventory\CommandInventory;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
 use tedo0627\redstonecircuit\block\utils\AnyFacingOppositePlayerTrait;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 use function array_map;
-use function array_shift;
-use function in_array;
-use function is_bool;
-use function preg_match_all;
-use function stripslashes;
+use function explode;
+use function trim;
+use const PHP_INT_MAX;
 
 abstract class CommandBlock extends Spawnable implements Nameable, CommandSender{
     use NameableTrait;
@@ -72,7 +72,8 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     protected bool $powered = false;
     protected int $successCount = 0;
     protected bool $trackOutput = true;
-    //protected bool $updateLastExecution = true; // Java edition only
+    protected bool $updateLastExecution = true; // not to be saved
+    protected int $lastExecution = -1; // not to be saved
     protected int $version = 4;
 
     public function __construct(World $world, Vector3 $pos){
@@ -103,90 +104,85 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
 
     abstract public function getCommandBlockType() : CommandBlockType;
 
+    abstract public function setCommandBlockType(CommandBlockType $type) : CommandBlock;
+
+    protected function markConditionMet() : bool{
+        $this->conditionMet = true;
+        if($this->lpCondionalMode) {
+            $this->conditionMet = $this->successCount > 0;
+        }
+
+        return $this->conditionMet;
+    }
+
     protected function execute() : void{
-        if($this->check() && $this->dispatch())
-            ++$this->successCount;
-
-        $block = $this->getBlock()->getSide($this->getFacing());
-        if(!$block instanceof BlockCommand) return;
-        if(!$this->getCommandBlockType()->equals(CommandBlockType::CHAIN())) return;
-
-        $pos = $this->getPosition();
-        $index = World::blockHash($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ());
-        $block->chain([$index]);
-    }
-
-    protected function check() : bool{
-        if($this->command === "") return false;
-
-        if($this->conditionalMode){
-            $tile = $this->getBlock()->getPosition()->getWorld()->getTile($this->getBlock()->getSide(Facing::opposite($this->getFacing()))->getPosition());
-            if(!$tile instanceof CommandBlock) return false;
-            if($tile->successCount <= 0) return false;
+        if($this->command !== ""){
+            $this->performCommand();
+        }else{
+            $this->successCount = 0;
         }
 
-        if($this->auto) return true;
-        return BlockPowerHelper::isPowered($this->getBlock());
+        self::executeChain($this->getBlock()->getPosition(), $this->facing);
     }
 
-    protected function chain(array $blockIndex = []) : void{
-        $pos = $this->getPosition();
-        $index = World::blockHash($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ());
-        if(in_array($index, $blockIndex, true)) return;
-
-        if($this->tickDelay !== 0){
-            $this->tick = $this->tickDelay;
-            return;
-        }
-
-        if($this->check() && $this->dispatch())
-            ++$this->successCount;
-        $block = $this->getBlock()->getSide($this->getFacing());
-        if(!$block instanceof BlockCommand) return;
-        if(!$this->getCommandBlockType()->equals(CommandBlockType::CHAIN())) return;
-
-        $pos = $this->getPosition();
-        $blockIndex[] = World::blockHash($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ());
-        $block->chain($blockIndex);
-    }
-
-    protected function dispatch() : bool{
-        if(RedstoneCircuit::isCallEvent()){
-            $event = new CommandEvent($this, $this->command);
-            $event->call();
-            if($event->isCancelled()) return false;
-
-            $this->command = $event->getCommand();
-        }
-
-        $args = [];
-        preg_match_all('/"((?:\\\\.|[^\\\\"])*)"|(\S+)/u', $this->command, $matches);
-        foreach($matches[0] as $k => $_){
-            for($i = 1; $i <= 2; ++$i){
-                if($matches[$i][$k] !== ""){
-                    $args[$k] = $i === 1 ? stripslashes($matches[$i][$k]) : $matches[$i][$k];
-                    break;
+    public function performCommand() : bool{
+        if(Server::getInstance()->getTick() !== $this->lastExecution) {
+            $this->successCount = 0;
+            if($this->command !== "") {
+                $this->lastOutput = "";
+                try{
+                    if(Server::getInstance()->dispatchCommand($this, $this->command, RedstoneCircuit::isCallEvent())) {
+                        ++$this->successCount;
+                    }
+                }catch(InvalidCommandSyntaxException $e){
+                    // TODO
                 }
             }
-        }
 
-        $successful = false;
-        $sentCommandLabel = array_shift($args);
-        if($sentCommandLabel !== null && ($target = Server::getInstance()->getCommandMap()->getCommand($sentCommandLabel)) !== null){
-            $target->timings->startTiming();
-
-            try{
-                $result = $target->execute($this, $sentCommandLabel, $args);
-                if(is_bool($result)) $successful = $result;
-            }catch(InvalidCommandSyntaxException){
-                $this->sendMessage($this->getLanguage()->translate(KnownTranslationFactory::commands_generic_usage($target->getUsage())));
-            }finally{
-                $target->timings->stopTiming();
+            if($this->updateLastExecution) {
+                $this->lastExecution = Server::getInstance()->getTick();
+            }else{
+                $this->lastExecution = -1;
             }
-        }else{
-            $this->sendMessage(KnownTranslationFactory::pocketmine_command_notFound($sentCommandLabel ?? "", "/help")->prefix(TextFormat::RED));
+
+            return true;
         }
-        return $successful;
+
+        return false;
+    }
+
+    protected static function executeChain(Position $pos, int $facing) : void{
+        $world = $pos->getWorld();
+        $block = $world->getBlock($pos);
+        $i = Limits::INT32_MAX; // TODO: read game rules
+        while(--$i > 0) {
+            $block = $block->getSide($facing);
+            if(!$block instanceof BlockCommand) {
+                break;
+            }
+            $facing = $block->getFacing();
+
+            $tile = $world->getTile($pos);
+            if(!$tile instanceof CommandBlock || !$tile->getCommandBlockType()->equals(CommandBlockType::CHAIN())) {
+                break;
+            }
+
+            if($tile->powered || $tile->auto) {
+                if($tile->markConditionMet()) {
+                    if(!$tile->performCommand()) {
+                        break;
+                    }
+                }
+
+                $block->onNearbyBlockChange();
+            }elseif($tile->lpCondionalMode) {
+                $tile->successCount = 0;
+            }
+        }
+
+        if($i === 0) {
+            Server::getInstance()->getLogger()->warning("Command Block chain tried to execute more than " . Limits::INT32_MAX . " blocks!");
+        }
     }
 
     public function onUpdate() : bool{
@@ -197,42 +193,24 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
 
         $this->timings->startTiming();
 
-        if($this->getCommandBlockType()->equals(CommandBlockType::REPEATING()))
-            return true;
+        if($this->getCommandBlockType()->equals(CommandBlockType::REPEATING())){
+            $this->markConditionMet();
+            if($this->conditionMet) {
+                $this->execute();
+            }elseif($this->lpCondionalMode){
+                $this->successCount = 0;
+            }
 
-        if(!$this->getCommandBlockType()->equals(CommandBlockType::IMPULSE()))
-            return false;
-
-        if($this->tickDelay === 0){
-            $this->execute();
-        }else{
-            $this->tick = $this->tickDelay;
-        }
-
-        if($this->tick > 0){
-            if($this->getCommandBlockType()->equals(CommandBlockType::REPEATING()) && !$this->check()){
-                $this->tick = -1;
+            if($this->powered || $this->auto){
                 return true;
             }
-
-            $this->tick--;
-            if($this->tick === 1){
+        }elseif($this->getCommandBlockType()->equals(CommandBlockType::IMPULSE())){
+            if($this->conditionMet) {
                 $this->execute();
-                if($this->getCommandBlockType()->equals(CommandBlockType::REPEATING()))
-                    $this->tick = $this->tickDelay;
-                return false;
+            }elseif($this->lpCondionalMode){
+                $this->successCount = 0;
             }
-            return true;
         }
-
-        if(!$this->getCommandBlockType()->equals(CommandBlockType::REPEATING()))
-            return false;
-
-        if($this->tickDelay === 0 || ($this->tick === -1 && $this->executeOnFirstTick)){
-            $this->tick = 0;
-            $this->execute();
-        }
-        $this->tick = $this->tickDelay;
 
         $this->timings->stopTiming();
 
@@ -274,5 +252,36 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
 
     public function addAdditionalSpawnData(CompoundTag $nbt) : void{
         $this->writeSaveData($nbt);
+    }
+
+    public function getLanguage() : Language{
+        return Server::getInstance()->getLanguage();
+    }
+
+    public function sendMessage(Translatable|string $message) : void{
+        if($message instanceof Translatable){
+            $this->lastOutput = $message->getText();
+            $this->lastOutputParams = array_map(
+                static fn(string|Translatable $param) => $param instanceof Translatable ? $param->getText() : $param,
+                $message->getParameters()
+            );
+            $message = $this->getLanguage()->translate($message);
+        }
+
+        foreach(explode("\n", trim($message)) as $line){
+            Terminal::writeLine(TextFormat::GREEN . "CommandBlock output | " . TextFormat::addBase(TextFormat::WHITE, $line));
+        }
+    }
+
+    public function getServer() : Server{
+        return Server::getInstance();
+    }
+
+    public function getScreenLineHeight() : int{
+        return PHP_INT_MAX;
+    }
+
+    public function setScreenLineHeight(?int $height) : void{
+        throw new BadMethodCallException("Cannot set screen line height of command block");
     }
 }

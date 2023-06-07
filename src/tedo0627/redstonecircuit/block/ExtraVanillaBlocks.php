@@ -12,6 +12,7 @@ use pocketmine\block\BlockTypeIds;
 use pocketmine\block\BlockTypeInfo;
 use pocketmine\item\ToolTier;
 use pocketmine\utils\CloningRegistryTrait;
+use tedo0627\redstonecircuit\block\enums\CommandBlockType;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 use tedo0627\redstonecircuit\block\mechanism\BlockDropper;
@@ -21,12 +22,14 @@ use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
 use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
 use tedo0627\redstonecircuit\block\power\BlockObserver;
 use tedo0627\redstonecircuit\block\power\BlockTarget;
-use tedo0627\redstonecircuit\tile\CommandBlock;
+use tedo0627\redstonecircuit\tile\ChainCommandBlock;
 use tedo0627\redstonecircuit\tile\Dispenser;
 use tedo0627\redstonecircuit\tile\Dropper;
+use tedo0627\redstonecircuit\tile\ImpulseCommandBlock;
 use tedo0627\redstonecircuit\tile\MovingBlock;
 use tedo0627\redstonecircuit\tile\Observer;
 use tedo0627\redstonecircuit\tile\PistonArm;
+use tedo0627\redstonecircuit\tile\RepeatingCommandBlock;
 
 /**
  * @generate-registry-docblock
@@ -68,9 +71,9 @@ final class ExtraVanillaBlocks{
 
     protected static function setup() : void{
         $indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
-        self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Command Block", $indestructibleTypeInfo, CommandBlockType::IMPULSE()));
-        self::register("repeating_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Repeating Command Block", $indestructibleTypeInfo, CommandBlockType::REPEATING()));
-        self::register("chain_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), CommandBlock::class), "Chain Command Block", $indestructibleTypeInfo, CommandBlockType::CHAIN()));
+        self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), ImpulseCommandBlock::class), "Command Block", $indestructibleTypeInfo, CommandBlockType::IMPULSE()));
+        self::register("repeating_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), RepeatingCommandBlock::class), "Repeating Command Block", $indestructibleTypeInfo, CommandBlockType::REPEATING()));
+        self::register("chain_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), ChainCommandBlock::class), "Chain Command Block", $indestructibleTypeInfo, CommandBlockType::CHAIN()));
         $dispenserTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
         self::register("dispenser", new BlockDispenser(new BlockIdentifier(BlockTypeIds::newId(), Dispenser::class), "Dispenser", $dispenserTypeInfo));
         self::register("dropper", new BlockDropper(new BlockIdentifier(BlockTypeIds::newId(), Dropper::class), "Dropper", $dispenserTypeInfo));

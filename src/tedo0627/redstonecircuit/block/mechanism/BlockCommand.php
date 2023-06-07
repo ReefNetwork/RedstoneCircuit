@@ -43,6 +43,15 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         return $this->commandBlockType;
     }
 
+    public function setCommandBlockType(CommandBlockType $commandBlockType) : BlockCommand{
+        $this->commandBlockType = $commandBlockType;
+        $commandBlockTile = $this->position->getWorld()->getTile($this->position);
+        if($commandBlockTile instanceof CommandBlock){
+            $commandBlockTile->setCommandBlockType($commandBlockType);
+        }
+        return $this;
+    }
+
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         if($player instanceof Player && $player->isCreative(true) && $player->hasPermission(DefaultPermissions::ROOT_OPERATOR)){ // TODO: create permission to test against
             $commandBlockTile = $this->position->getWorld()->getTile($this->position);

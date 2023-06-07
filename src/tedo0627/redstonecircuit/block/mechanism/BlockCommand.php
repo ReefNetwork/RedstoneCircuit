@@ -52,6 +52,19 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         return $this;
     }
 
+    public function isConditionalMode() : bool{
+        return $this->conditionalMode;
+    }
+
+    public function setConditionalMode(bool $conditionalMode) : BlockCommand{
+        $this->conditionalMode = $conditionalMode;
+        $commandBlockTile = $this->position->getWorld()->getTile($this->position);
+        if($commandBlockTile instanceof CommandBlock){
+            $commandBlockTile->setLPCondionalMode($conditionalMode);
+        }
+        return $this;
+    }
+
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         if($player instanceof Player && $player->isCreative(true) && $player->hasPermission(DefaultPermissions::ROOT_OPERATOR)){ // TODO: create permission to test against
             $commandBlockTile = $this->position->getWorld()->getTile($this->position);

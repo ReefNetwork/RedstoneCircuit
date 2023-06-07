@@ -7,8 +7,9 @@ namespace tedo0627\redstonecircuit\listener;
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
 use pocketmine\network\mcpe\protocol\CommandBlockUpdatePacket;
-use pocketmine\Server;
-use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
+use pocketmine\permission\DefaultPermissions;
+use tedo0627\redstonecircuit\block\enums\CommandBlockType;
+use tedo0627\redstonecircuit\tile\CommandBlock;
 
 class CommandBlockListener implements Listener{
 
@@ -24,20 +25,22 @@ class CommandBlockListener implements Listener{
 
         $pos = $packet->blockPosition;
         $world = $player->getWorld();
-        $block = $world->getBlockAt($pos->getX(), $pos->getY(), $pos->getZ());
-        if(!$block instanceof BlockCommand) return;
+        $tile = $world->getTileAt($pos->getX(), $pos->getY(), $pos->getZ());
+        if(!$tile instanceof CommandBlock) return;
 
-        $block->setCommandBlockMode($packet->commandBlockMode);
-        $block->setAuto(!$packet->isRedstoneMode);
-        $block->setConditionalMode($packet->isConditional);
-        $block->setCommand($packet->command);
-        $block->setLastOutput($packet->lastOutput);
-        $block->setCustomName($packet->name);
-        $block->setTickDelay($packet->tickDelay);
-        $block->setExecuteOnFirstTick($packet->executeOnFirstTick);
-        $block->setTick(-1);
-        $pos = $block->getPosition();
-        $world->setBlock($pos, $block);
-        $world->scheduleDelayedBlockUpdate($pos, 1);
+        $tile->updateInformation(
+            $packet->name,
+            match($packet->commandBlockMode) {
+                CommandBlockType::IMPULSE()->lpCommandMode => CommandBlockType::IMPULSE(),
+                CommandBlockType::REPEATING()->lpCommandMode => CommandBlockType::REPEATING(),
+                CommandBlockType::CHAIN()->lpCommandMode => CommandBlockType::CHAIN(),
+            },
+            $packet->isConditional,
+            $packet->isRedstoneMode,
+            $packet->command,
+			$packet->shouldTrackOutput,
+            $packet->lastOutput
+        );
+		$world->scheduleDelayedBlockUpdate($pos, $packet->executeOnFirstTick ? 1 : $packet->tickDelay);
     }
 }

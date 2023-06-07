@@ -295,4 +295,27 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     public function setScreenLineHeight(?int $height) : void{
         throw new BadMethodCallException("Cannot set screen line height of command block");
     }
+
+    public function updateInformation(
+        string $name,
+        CommandBlockType $commandBlockMode,
+        bool $isConditional,
+        bool $isRedstoneMode,
+        string $command,
+        bool $trackOutput,
+        string $lastOutput
+    ) : void{
+        $this->setName($name);
+        $this->setCommandBlockType($commandBlockMode);
+        $this->lpCondionalMode = $isConditional;
+        $this->lpRedstoneMode = $isRedstoneMode;
+        $this->auto = !$isRedstoneMode;
+        if($command !== "" && $command !== $this->command) {
+            $this->conditionMet = false;
+            $this->command = $command;
+        }
+        $this->trackOutput = $trackOutput;
+        $this->lastOutput = $lastOutput;
+    }
+
 }

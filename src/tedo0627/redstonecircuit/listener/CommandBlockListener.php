@@ -20,8 +20,7 @@ class CommandBlockListener implements Listener{
         if($player === null) return;
         if(!$packet->isBlock) return;
 
-        $server = Server::getInstance();
-        if(!$server->isOp($player->getName()) || !$player->isCreative()) return;
+        if(!$player->isCreative() || !$player->hasPermission(DefaultPermissions::ROOT_OPERATOR)) return;
 
         $pos = $packet->blockPosition;
         $world = $player->getWorld();

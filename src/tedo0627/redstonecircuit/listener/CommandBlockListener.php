@@ -6,10 +6,12 @@ namespace tedo0627\redstonecircuit\listener;
 
 use pocketmine\event\Listener;
 use pocketmine\event\server\DataPacketReceiveEvent;
+use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\CommandBlockUpdatePacket;
 use pocketmine\permission\DefaultPermissions;
 use tedo0627\redstonecircuit\block\enums\CommandBlockType;
 use tedo0627\redstonecircuit\tile\CommandBlock;
+use function assert;
 
 class CommandBlockListener implements Listener{
 
@@ -18,7 +20,7 @@ class CommandBlockListener implements Listener{
         if(!$packet instanceof CommandBlockUpdatePacket) return;
 
         $player = $event->getOrigin()->getPlayer();
-        if($player === null) return;
+        assert($player !== null);
         if(!$packet->isBlock) return;
 
         if(!$player->isCreative() || !$player->hasPermission(DefaultPermissions::ROOT_OPERATOR)) return; // TODO: better permission check

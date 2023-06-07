@@ -43,35 +43,37 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     use AnyFacingOppositePlayerTrait;
     use PermissibleDelegateTrait;
 
-    public const TAG_AUTO = "auto";
-    public const TAG_COMMAND = "command";
-    public const TAG_CONDITIONAL_MODE = "conditionalMode";
-    public const TAG_CONDITION_MET = "conditionMet";
-    public const TAG_EXECUTE_ON_FIRST_TICK = "executeOnFirstTick";
-    public const TAG_LAST_EXECUTION = "lastExecution";
-    public const TAG_LAST_OUTPUT = "lastOutput";
-    public const TAG_LAST_OUTPUT_PARAMS = "lastOutputParams";
-    public const TAG_POWERED = "powered";
-    public const TAG_SUCCESS_COUNT = "SuccessCount";
-    public const TAG_TICK_DELAY = "tickDelay";
-    public const TAG_TRACK_OUTPUT = "trackOutput";
-    public const TAG_VERSION = "Version";
+    public const TAG_LAST_OUTPUT_PARAMS = "LastOutputParams"; // TAG_LIST<TAG_STRING>
+    public const TAG_AUTO = "auto"; // TAG_BYTE
+    public const TAG_CONDITION_MET = "conditionMet"; // TAG_BYTE
+    public const TAG_KEEP_PACKED = "keepPacked"; // TAG_BYTE
+    public const TAG_LP_CONDIONAL_MODE = "LPCondionalMode"; // TAG_BYTE
+    public const TAG_LP_REDSTONE_MODE = "LPRedstoneMode"; // TAG_BYTE
+    public const TAG_POWERED = "powered"; // TAG_BYTE
+    public const TAG_TRACK_OUTPUT = "TrackOutput"; // TAG_BYTE
+    public const TAG_UPDATE_LAST_EXECUTION = "UpdateLastExecution"; // TAG_BYTE
+    public const TAG_LP_COMMAND_MODE = "LPCommandMode"; // TAG_INT
+    public const TAG_SUCCESS_COUNT = "SuccessCount"; // TAG_INT
+    public const TAG_VERSION = "Version"; // TAG_INT
+    public const TAG_COMMAND = "Command"; // TAG_STRING
+    public const TAG_LAST_OUTPUT = "LastOutput"; // TAG_STRING
 
     protected CommandInventory $inventory;
     protected bool $auto = false;
     protected bool $conditionMet = false;
-    protected bool $conditionalMode = false;
     protected string $command = "";
-    protected bool $executeOnFirstTick = false;
-    protected int $lastExecution = 0;
+    //protected bool $keepPacked = false; // Java edition only
     protected string $lastOutput = "";
     /** @var string[] $lastOutputParams */
     protected array $lastOutputParams = [];
+    protected bool $lpCondionalMode = false;
+    protected int $lpCommandMode = 0;
+    protected bool $lpRedstoneMode = false;
+    protected bool $powered = false;
     protected int $successCount = 0;
-    protected int $tickDelay = 0;
     protected bool $trackOutput = true;
-    protected int $version = 0;
-    protected int $tick = 0;
+    //protected bool $updateLastExecution = true; // Java edition only
+    protected int $version = 4;
 
     public function __construct(World $world, Vector3 $pos){
         parent::__construct($world, $pos);
@@ -238,51 +240,39 @@ abstract class CommandBlock extends Spawnable implements Nameable, CommandSender
     }
 
     public function readSaveData(CompoundTag $nbt) : void{
-        $this->powered = $nbt->getByte(self::TAG_POWERED, 0) === 1;
         $this->auto = $nbt->getByte(self::TAG_AUTO, 0) === 1;
         $this->conditionMet = $nbt->getByte(self::TAG_CONDITION_MET, 0) === 1;
-        $this->conditionalMode = $nbt->getByte(self::TAG_CONDITIONAL_MODE, 0) === 1;
         $this->command = $nbt->getString(self::TAG_COMMAND, "");
-        $this->version = $nbt->getInt(self::TAG_VERSION, 0);
-        $this->successCount = $nbt->getInt(self::TAG_SUCCESS_COUNT, 0);
         $this->loadName($nbt);
+        //$this->keepPacked = $nbt->getByte(self::TAG_KEEP_PACKED, 0) === 1; // Java edition only
         $this->lastOutput = $nbt->getString(self::TAG_LAST_OUTPUT, "");
         $this->lastOutputParams = $nbt->getListTag(self::TAG_LAST_OUTPUT_PARAMS)?->getAllValues() ?? [];
-        $this->trackOutput = $nbt->getByte(self::TAG_TRACK_OUTPUT, 0) === 1;
-        $this->lastExecution = $nbt->getLong(self::TAG_LAST_EXECUTION, 0);
-        $this->tickDelay = $nbt->getInt(self::TAG_TICK_DELAY, 0);
-        $this->executeOnFirstTick = $nbt->getByte(self::TAG_EXECUTE_ON_FIRST_TICK, 0) === 1;
+        $this->lpCondionalMode = $nbt->getByte(self::TAG_LP_CONDIONAL_MODE, 0) === 1;
+        $this->lpCommandMode = $nbt->getInt(self::TAG_LP_COMMAND_MODE, 0);
+        $this->lpRedstoneMode = $nbt->getByte(self::TAG_LP_REDSTONE_MODE, 0) === 1;
+        $this->powered = $nbt->getByte(self::TAG_POWERED, 0) === 1;
+        $this->successCount = $nbt->getInt(self::TAG_SUCCESS_COUNT, 0);
+        $this->trackOutput = $nbt->getByte(self::TAG_TRACK_OUTPUT, 0) === 1 || $nbt->getByte(self::TAG_UPDATE_LAST_EXECUTION, 0) === 1;
+        $this->version = $nbt->getInt(self::TAG_VERSION, 4);
     }
 
     protected function writeSaveData(CompoundTag $nbt) : void{
-        $nbt->setByte(self::TAG_POWERED, $this->powered ? 1 : 0);
         $nbt->setByte(self::TAG_AUTO, $this->auto ? 1 : 0);
         $nbt->setByte(self::TAG_CONDITION_MET, $this->conditionMet ? 1 : 0);
-        $nbt->setByte(self::TAG_CONDITIONAL_MODE, $this->conditionalMode ? 1 : 0);
         $nbt->setString(self::TAG_COMMAND, $this->command);
-        $nbt->setInt(self::TAG_VERSION, $this->version);
-        $nbt->setInt(self::TAG_SUCCESS_COUNT, $this->successCount);
-        $this->saveName($nbt);
+        //$nbt->setByte(self::TAG_KEEP_PACKED, $this->keepPacked ? 1 : 0); // Java edition only
         $nbt->setString(self::TAG_LAST_OUTPUT, $this->lastOutput);
-        $nbt->setTag(self::TAG_LAST_OUTPUT_PARAMS, new ListTag(array_map(static fn(string $_) => new StringTag($_), $this->lastOutputParams), NBT::TAG_String));
+        $nbt->setTag(self::TAG_LAST_OUTPUT_PARAMS, new ListTag(array_map(static fn(string $param) => new StringTag($param), $this->lastOutputParams), NBT::TAG_String));
+        $nbt->setByte(self::TAG_LP_CONDIONAL_MODE, $this->lpCondionalMode ? 1 : 0);
+        $nbt->setInt(self::TAG_LP_COMMAND_MODE, $this->lpCommandMode);
+        $nbt->setByte(self::TAG_LP_REDSTONE_MODE, $this->lpRedstoneMode ? 1 : 0);
+        $nbt->setByte(self::TAG_POWERED, $this->powered ? 1 : 0);
+        $nbt->setInt(self::TAG_SUCCESS_COUNT, $this->successCount);
         $nbt->setByte(self::TAG_TRACK_OUTPUT, $this->trackOutput ? 1 : 0);
-        $nbt->setLong(self::TAG_LAST_EXECUTION, $this->lastExecution);
-        $nbt->setInt(self::TAG_TICK_DELAY, $this->tickDelay);
-        $nbt->setByte(self::TAG_EXECUTE_ON_FIRST_TICK, $this->executeOnFirstTick ? 1 : 0);
+        $nbt->setInt(self::TAG_VERSION, $this->version);
     }
 
     public function addAdditionalSpawnData(CompoundTag $nbt) : void{
-        $nbt->setString(self::TAG_COMMAND, $this->command);
-        $nbt->setInt(self::TAG_TICK_DELAY, $this->tickDelay);
-        $nbt->setByte(self::TAG_EXECUTE_ON_FIRST_TICK, $this->executeOnFirstTick ? 1 : 0);
-        $nbt->setByte(self::TAG_TRACK_OUTPUT, $this->trackOutput ? 1 : 0);
-        $nbt->setByte(self::TAG_CONDITIONAL_MODE, $this->conditionalMode ? 1 : 0);
-        $nbt->setByte(self::TAG_AUTO, $this->auto ? 1 : 0);
-        $nbt->setByte(self::TAG_POWERED, $this->powered ? 1 : 0);
-        $nbt->setByte(self::TAG_CONDITION_MET, $this->conditionMet ? 1 : 0);
-        $nbt->setInt(self::TAG_SUCCESS_COUNT, $this->successCount);
-        $nbt->setString(self::TAG_LAST_OUTPUT, $this->lastOutput);
-        $nbt->setTag(self::TAG_LAST_OUTPUT_PARAMS, new ListTag(array_map(static fn(string $_) => new StringTag($_), $this->lastOutputParams), NBT::TAG_String));
-        $this->saveName($nbt);
+        $this->writeSaveData($nbt);
     }
 }

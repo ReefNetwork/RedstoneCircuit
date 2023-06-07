@@ -33,16 +33,18 @@ class CommandBlockListener implements Listener{
         $tile->updateInformation(
             $packet->name,
             match($packet->commandBlockMode) {
-                CommandBlockType::IMPULSE()->lpCommandMode => CommandBlockType::IMPULSE(),
                 CommandBlockType::REPEATING()->lpCommandMode => CommandBlockType::REPEATING(),
                 CommandBlockType::CHAIN()->lpCommandMode => CommandBlockType::CHAIN(),
+                default => CommandBlockType::IMPULSE(),
             },
             $packet->isConditional,
             $packet->isRedstoneMode,
             $packet->command,
-			$packet->shouldTrackOutput,
-            $packet->lastOutput
+            $packet->shouldTrackOutput,
+            $packet->lastOutput,
+            $packet->executeOnFirstTick,
+            $packet->tickDelay,
         );
-		$world->scheduleDelayedBlockUpdate($pos, $packet->executeOnFirstTick ? 1 : $packet->tickDelay);
+        $world->scheduleDelayedBlockUpdate(new Vector3($pos->getX(), $pos->getY(), $pos->getZ()), $packet->executeOnFirstTick ? 0 : max($packet->tickDelay, 1));
     }
 }

@@ -84,7 +84,7 @@ class BlockCommand extends Opaque implements IRedstoneComponent{
         $world = $this->position->getWorld();
         $commandBlockTile = $world->getTile($this->position);
         if($commandBlockTile instanceof CommandBlock && $commandBlockTile->onUpdate()){
-            $world->scheduleDelayedBlockUpdate($this->position, 1); //TODO: check this
+            $world->scheduleDelayedBlockUpdate($this->position, $commandBlockTile->getTickDelay()); //TODO: check this
         }
     }
 

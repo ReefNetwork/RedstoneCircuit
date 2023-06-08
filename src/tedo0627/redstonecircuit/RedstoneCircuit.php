@@ -19,6 +19,7 @@ use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\inventory\WindowTypes;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\AsyncTask;
+use pocketmine\utils\SingletonTrait;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use tedo0627\redstonecircuit\block\ExtraVanillaBlocks;
 use tedo0627\redstonecircuit\block\inventory\CommandInventory;
@@ -29,6 +30,10 @@ use tedo0627\redstonecircuit\listener\CommandBlockListener;
 use tedo0627\redstonecircuit\listener\TargetBlockListener;
 
 class RedstoneCircuit extends PluginBase{
+    use SingletonTrait{
+        setInstance as private;
+        reset as private;
+    }
 
     private static bool $callEvent = false;
 
@@ -143,6 +148,10 @@ class RedstoneCircuit extends PluginBase{
 
         CreativeInventory::reset();
     }*/
+
+    public function onLoad() : void{
+        self::setInstance($this);
+    }
 
     public function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents(new CommandBlockListener(), $this);

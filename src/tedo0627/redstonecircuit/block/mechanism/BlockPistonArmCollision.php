@@ -14,18 +14,6 @@ use pocketmine\player\Player;
 class BlockPistonArmCollision extends Transparent{
     use AnyFacingTrait;
 
-    protected function writeStateToMeta() : int{
-        return BlockDataSerializer::writeFacing($this->facing);
-    }
-
-    public function readStateFromData(int $id, int $stateMeta) : void{
-        $this->setFacing(BlockDataSerializer::readFacing($stateMeta & 0x07));
-    }
-
-    public function getStateBitmask() : int{
-        return 0b111;
-    }
-
     public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         $block = $this->getSide($this->getPistonFace());
         if($block instanceof BlockPiston) $this->getPosition()->getWorld()->useBreakOn($block->getPosition());

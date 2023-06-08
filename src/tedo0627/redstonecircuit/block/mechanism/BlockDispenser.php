@@ -23,10 +23,10 @@ class BlockDispenser extends Opaque implements IRedstoneComponent{
     use PoweredByRedstoneTrait;
     use RedstoneComponentTrait;
 
-	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
-		$w->facing($this->facing);
-		$w->bool($this->powered);
-	}
+    protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
+        $w->facing($this->facing);
+        $w->bool($this->powered);
+    }
 
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         if($player instanceof Player){

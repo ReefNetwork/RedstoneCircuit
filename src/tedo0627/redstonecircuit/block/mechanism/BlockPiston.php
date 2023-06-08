@@ -16,6 +16,7 @@ use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
 use tedo0627\redstonecircuit\block\BlockUpdateHelper;
+use tedo0627\redstonecircuit\block\ExtraVanillaBlocks;
 use tedo0627\redstonecircuit\block\ILinkRedstoneWire;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
@@ -28,9 +29,7 @@ use tedo0627\redstonecircuit\RedstoneCircuit;
 use tedo0627\redstonecircuit\sound\PistonInSound;
 use tedo0627\redstonecircuit\sound\PistonOutSound;
 use tedo0627\redstonecircuit\tile\IgnorePiston;
-use tedo0627\redstonecircuit\tile\PistonArm;
 use function abs;
-use function assert;
 use function count;
 
 class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWire{
@@ -127,7 +126,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
     }
 
     public function getNewPistonArm() : Block{
-        return BlockFactory::getInstance()->get(Ids::PISTONARMCOLLISION, $this->getFacing());
+        return ExtraVanillaBlocks::PISTON_ARM_COLLISION();
     }
 
     public function getPistonArmFace() : int{

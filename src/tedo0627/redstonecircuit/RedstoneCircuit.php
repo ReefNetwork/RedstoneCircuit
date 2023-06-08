@@ -156,7 +156,7 @@ class RedstoneCircuit extends PluginBase{
     public function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents(new CommandBlockListener(), $this);
         $this->getServer()->getPluginManager()->registerEvent(PlayerJoinEvent::class,
-            function(PlayerJoinEvent $event){
+            static function(PlayerJoinEvent $event){
                 $callbackSet = $event->getPlayer()->getNetworkSession()->getInvManager()->getContainerOpenCallbacks(); // inventory manager always exists at this point
                 $callbackSet->add(static fn(int $id, Inventory $inv) => $inv instanceof CommandInventory ? [ContainerOpenPacket::blockInv($id, WindowTypes::COMMAND_BLOCK, BlockPosition::fromVector3($inv->getHolder()))] : null);
                 $callbackSet->add(static fn(int $id, Inventory $inv) => $inv instanceof DispenserInventory ? [ContainerOpenPacket::blockInv($id, WindowTypes::DISPENSER, BlockPosition::fromVector3($inv->getHolder()))] : null);

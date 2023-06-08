@@ -6,6 +6,7 @@ namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Opaque;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
+use pocketmine\data\runtime\RuntimeDataDescriber;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -21,6 +22,11 @@ class BlockDispenser extends Opaque implements IRedstoneComponent{
     use AnyFacingOppositePlayerTrait;
     use PoweredByRedstoneTrait;
     use RedstoneComponentTrait;
+
+	protected function describeBlockOnlyState(RuntimeDataDescriber $w) : void{
+		$w->facing($this->facing);
+		$w->bool($this->powered);
+	}
 
     public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         if($player instanceof Player){

@@ -20,10 +20,10 @@ class BucketDispenseBehavior implements DispenseItemBehavior{
         $this->default = new DefaultItemDispenseBehavior();
     }
 
-    public function dispense(BlockDispenser $block, Item $item) : ?Item{
-        $side = $block->getSide($block->getFacing());
+    public function dispense(BlockDispenser $block, Item $dispensedItem, Item &$remainingItem) : bool{
+        $side = $tile->getSide($tile->getFacing());
         if($item instanceof LiquidBucket){
-            if(!$side->canBeReplaced()) return $this->default->dispense($block, $item);
+            if(!$side->canBeReplaced()) return $this->default->dispense($tile, $item);
 
             $side->getPosition()->getWorld()->setBlock($side->getPosition(), $item->getLiquid());
             $item->pop();
@@ -35,7 +35,7 @@ class BucketDispenseBehavior implements DispenseItemBehavior{
             $side instanceof Lava => VanillaItems::LAVA_BUCKET(),
             default => null
         };
-        if($result === null) return $this->default->dispense($block, $item);
+        if($result === null) return $this->default->dispense($tile, $item);
 
         $side->getPosition()->getWorld()->setBlock($side->getPosition(), VanillaBlocks::AIR());
         $item->pop();

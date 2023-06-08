@@ -9,5 +9,5 @@ use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 
 interface DispenseItemBehavior{
 
-    public function dispense(BlockDispenser $block, Item $item) : ?Item;
+    public function dispense(BlockDispenser $block, Item $dispensedItem, Item &$remainingItem) : bool;
 }

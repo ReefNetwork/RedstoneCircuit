@@ -12,46 +12,47 @@ use pocketmine\entity\projectile\Egg;
 use pocketmine\entity\projectile\ExperienceBottle;
 use pocketmine\entity\projectile\Snowball;
 use pocketmine\entity\projectile\SplashPotion;
+use pocketmine\inventory\ArmorInventory;
 use pocketmine\item\Item;
 use pocketmine\utils\RegistryTrait;
 
 /**
  * @generate-registry-docblock
  *
- * @method static DefaultItemDispenseBehavior DEFAULT()
- * @method static BucketDispenseBehavior BUCKET()
- * @method static FlintSteelDispenseBehavior FLINT_AND_STEEL()
- * @method static BoneMealDispenseBehavior BONE_MEAL()
- * @method static TNTDispenseBehavior TNT()
- * @method static ShulkerBoxDispenseBehavior SHULKER_BOX()
- * @method static GlassBottleDispenseBehavior GLASS_BOTTLE()
  * @method static ProjectileDispenseBehavior ARROW()
- * @method static ProjectileDispenseBehavior EGG()
- * @method static ProjectileDispenseBehavior SNOWBALL()
- * @method static ProjectileDispenseBehavior EXPERIENCE_BOTTLE()
- * @method static ArmorDispenseBehavior LEATHER_CAP()
- * @method static ArmorDispenseBehavior LEATHER_TUNIC()
- * @method static ArmorDispenseBehavior LEATHER_PANTS()
- * @method static ArmorDispenseBehavior LEATHER_BOOTS()
- * @method static ArmorDispenseBehavior CHAIN_HELMET()
- * @method static ArmorDispenseBehavior CHAIN_CHESTPLATE()
- * @method static ArmorDispenseBehavior CHAIN_LEGGINGS()
- * @method static ArmorDispenseBehavior CHAIN_BOOTS()
- * @method static ArmorDispenseBehavior IRON_HELMET()
- * @method static ArmorDispenseBehavior IRON_CHESTPLATE()
- * @method static ArmorDispenseBehavior IRON_LEGGINGS()
- * @method static ArmorDispenseBehavior IRON_BOOTS()
- * @method static ArmorDispenseBehavior DIAMOND_HELMET()
- * @method static ArmorDispenseBehavior DIAMOND_CHESTPLATE()
- * @method static ArmorDispenseBehavior DIAMOND_LEGGINGS()
- * @method static ArmorDispenseBehavior DIAMOND_BOOTS()
- * @method static ArmorDispenseBehavior GOLD_HELMET()
- * @method static ArmorDispenseBehavior GOLD_CHESTPLATE()
- * @method static ArmorDispenseBehavior GOLD_LEGGINGS()
- * @method static ArmorDispenseBehavior GOLD_BOOTS()
- * @method static ArmorDispenseBehavior TURTLE_HELMET()
+ * @method static BoneMealDispenseBehavior BONE_MEAL()
+ * @method static BucketDispenseBehavior BUCKET()
  * @method static ArmorDispenseBehavior CARVED_PUMPKIN()
+ * @method static ArmorDispenseBehavior CHAIN_BOOTS()
+ * @method static ArmorDispenseBehavior CHAIN_CHESTPLATE()
+ * @method static ArmorDispenseBehavior CHAIN_HELMET()
+ * @method static ArmorDispenseBehavior CHAIN_LEGGINGS()
+ * @method static DefaultItemDispenseBehavior DEFAULT()
+ * @method static ArmorDispenseBehavior DIAMOND_BOOTS()
+ * @method static ArmorDispenseBehavior DIAMOND_CHESTPLATE()
+ * @method static ArmorDispenseBehavior DIAMOND_HELMET()
+ * @method static ArmorDispenseBehavior DIAMOND_LEGGINGS()
+ * @method static ProjectileDispenseBehavior EGG()
+ * @method static ProjectileDispenseBehavior EXPERIENCE_BOTTLE()
+ * @method static FlintSteelDispenseBehavior FLINT_AND_STEEL()
+ * @method static GlassBottleDispenseBehavior GLASS_BOTTLE()
+ * @method static ArmorDispenseBehavior GOLD_BOOTS()
+ * @method static ArmorDispenseBehavior GOLD_CHESTPLATE()
+ * @method static ArmorDispenseBehavior GOLD_HELMET()
+ * @method static ArmorDispenseBehavior GOLD_LEGGINGS()
+ * @method static ArmorDispenseBehavior IRON_BOOTS()
+ * @method static ArmorDispenseBehavior IRON_CHESTPLATE()
+ * @method static ArmorDispenseBehavior IRON_HELMET()
+ * @method static ArmorDispenseBehavior IRON_LEGGINGS()
+ * @method static ArmorDispenseBehavior LEATHER_BOOTS()
+ * @method static ArmorDispenseBehavior LEATHER_CAP()
+ * @method static ArmorDispenseBehavior LEATHER_PANTS()
+ * @method static ArmorDispenseBehavior LEATHER_TUNIC()
  * @method static ArmorDispenseBehavior MOB_HEAD()
+ * @method static ShulkerBoxDispenseBehavior SHULKER_BOX()
+ * @method static ProjectileDispenseBehavior SNOWBALL()
+ * @method static TNTDispenseBehavior TNT()
+ * @method static ArmorDispenseBehavior TURTLE_HELMET()
  */
 final class DispenserBehaviorRegistry{
     use RegistryTrait;
@@ -109,5 +110,37 @@ final class DispenserBehaviorRegistry{
                 return new SplashPotion($location, null, $item->getType());
             }
         });
+        foreach([
+            "leather_cap" => ArmorInventory::SLOT_HEAD,
+            "leather_tunic" => ArmorInventory::SLOT_CHEST,
+            "leather_pants" => ArmorInventory::SLOT_LEGS,
+            "leather_boots" => ArmorInventory::SLOT_FEET,
+            "chainmail_helmet" => ArmorInventory::SLOT_HEAD,
+            "chainmail_chestplate" => ArmorInventory::SLOT_CHEST,
+            "chainmail_leggings" => ArmorInventory::SLOT_LEGS,
+            "chainmail_boots" => ArmorInventory::SLOT_FEET,
+            "iron_helmet" => ArmorInventory::SLOT_HEAD,
+            "iron_chestplate" => ArmorInventory::SLOT_CHEST,
+            "iron_leggings" => ArmorInventory::SLOT_LEGS,
+            "iron_boots" => ArmorInventory::SLOT_FEET,
+            "diamond_helmet" => ArmorInventory::SLOT_HEAD,
+            "diamond_chestplate" => ArmorInventory::SLOT_CHEST,
+            "diamond_leggings" => ArmorInventory::SLOT_LEGS,
+            "diamond_boots" => ArmorInventory::SLOT_FEET,
+            "golden_helmet" => ArmorInventory::SLOT_HEAD,
+            "golden_chestplate" => ArmorInventory::SLOT_CHEST,
+            "golden_leggings" => ArmorInventory::SLOT_LEGS,
+            "golden_boots" => ArmorInventory::SLOT_FEET,
+            "carved_pumpkin" => ArmorInventory::SLOT_HEAD,
+            "mob_head" => ArmorInventory::SLOT_HEAD,
+            "turtle_helmet" => ArmorInventory::SLOT_HEAD,
+            "netherite_helmet" => ArmorInventory::SLOT_HEAD,
+            "netherite_chestplate" => ArmorInventory::SLOT_CHEST,
+            "netherite_leggings" => ArmorInventory::SLOT_LEGS,
+            "netherite_boots" => ArmorInventory::SLOT_FEET,
+            // TODO: Add Elytra
+        ] as $item_name => $slot){
+            self::register($item_name, new ArmorDispenseBehavior($slot));
+        }
     }
 }

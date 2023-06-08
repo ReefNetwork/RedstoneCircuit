@@ -19,7 +19,7 @@ class BlockDropper extends BlockDispenser{
         if(!$tile instanceof Dispenser) return;
 
         $inventory = $tile->getInventory();
-        $slot = $inventory->getRandomSlot();
+        $slot = $inventory->getItem(mt_rand(0, $inventory->getSize() - 1));
         if($slot === -1){
             $this->getPosition()->getWorld()->addSound($this->getPosition(), new ClickFailSound(1.2));
             return;

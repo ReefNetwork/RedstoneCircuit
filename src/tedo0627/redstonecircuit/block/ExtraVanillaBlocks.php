@@ -84,7 +84,7 @@ final class ExtraVanillaBlocks{
         self::register("sticky_piston_arm", new BlockPistonArmCollision(new BlockIdentifier(BlockTypeIds::newId()), "Sticky Piston Arm Collision", $pistonTypeInfo));
         self::register("moving_block", new BlockMoving(new BlockIdentifier(BlockTypeIds::newId(), MovingBlock::class), "Moving Block", $indestructibleTypeInfo));
         $reusableTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
-        self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId(), Observer::class), "Observer", $reusableTypeInfo));
+        self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId()), "Observer", $reusableTypeInfo));
         self::register("target", new BlockTarget(new BlockIdentifier(BlockTypeIds::newId()), "Target", $reusableTypeInfo));
     }
 }

@@ -117,7 +117,6 @@ class BlockRedstoneComparator extends RedstoneComparator implements IRedstoneCom
                 $power = 1 + ($stack / $inventory->getSize()) * 14;
             }
             if  (!is_int($power)) {
-                var_dump("error comparator power $power");
                 $power = intval($power);
             }
             return $power;

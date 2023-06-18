@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\WoodenButton;
@@ -17,15 +19,16 @@ use tedo0627\redstonecircuit\block\LinkRedstoneWireTrait;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use function count;
 
-class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($this->isPressed()) return true;
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+        if($this->isPressed()) return true;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
             $event->call();
         }
@@ -34,15 +37,15 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         return true;
     }
 
-    public function onScheduledUpdate(): void {
-        if (!$this->isPressed()) return;
+    public function onScheduledUpdate() : void{
+        if(!$this->isPressed()) return;
 
         $entities = $this->getPosition()->getWorld()->getNearbyEntities($this->getHitCollision());
-        for ($i = 0; $i < count($entities); $i++) {
-            if ($entities[$i] instanceof Arrow) return;
+        for($i = 0; $i < count($entities); $i++){
+            if($entities[$i] instanceof Arrow) return;
         }
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
             $event->call();
         }
@@ -50,24 +53,24 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null) : bool{
         parent::onBreak($item, $player);
-        if ($this->isPressed()) BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
+        if($this->isPressed()) BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
         return true;
     }
 
-    public function hasEntityCollision(): bool {
+    public function hasEntityCollision() : bool{
         return true;
     }
 
-    public function onEntityInside(Entity $entity): bool {
-        if (!$entity instanceof Arrow) return true;
-        if (!$this->getHitCollision()->intersectsWith($entity->getBoundingBox())) return true;
+    public function onEntityInside(Entity $entity) : bool{
+        if(!$entity instanceof Arrow) return true;
+        if(!$this->getHitCollision()->intersectsWith($entity->getBoundingBox())) return true;
 
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
-        if ($this->isPressed()) return true;
+        if($this->isPressed()) return true;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
             $event->call();
         }
@@ -77,7 +80,7 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         return false;
     }
 
-    protected function getHitCollision(): AxisAlignedBB {
+    protected function getHitCollision() : AxisAlignedBB{
         $bb = match ($this->getFacing()) {
             Facing::DOWN => new AxisAlignedBB(5, 14, 6, 11, 16, 10),
             Facing::UP => new AxisAlignedBB(5, 0, 6, 11, 2, 10),
@@ -97,7 +100,7 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         return $bb;
     }
 
-    protected function recalculateCollisionBoxes(): array {
+    protected function recalculateCollisionBoxes() : array{
         $bb = match ($this->getFacing()) {
             Facing::DOWN => new AxisAlignedBB(5, 15, 6, 11, 16, 10),
             Facing::UP => new AxisAlignedBB(5, 0, 6, 11, 1, 10),
@@ -112,19 +115,19 @@ class BlockWoodenButton extends WoodenButton implements IRedstoneComponent, ILin
         $bb->maxY /= 16;
         $bb->minZ /= 16;
         $bb->maxZ /= 16;
-        return [ $bb ];
+        return [$bb];
     }
 
-    public function getStrongPower(int $face): int {
-        if (!$this->isPressed()) return 0;
+    public function getStrongPower(int $face) : int{
+        if(!$this->isPressed()) return 0;
         return $face === $this->getFacing() ? 15 : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->isPressed() ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->isPressed();
     }
 }

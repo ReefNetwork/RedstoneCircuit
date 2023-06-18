@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\StoneButton;
@@ -15,14 +17,14 @@ use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
 
-class BlockStoneButton extends StoneButton implements IRedstoneComponent, ILinkRedstoneWire {
+class BlockStoneButton extends StoneButton implements IRedstoneComponent, ILinkRedstoneWire{
     use LinkRedstoneWireTrait;
     use RedstoneComponentTrait;
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
-        if ($this->isPressed()) return true;
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
+        if($this->isPressed()) return true;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
             $event->call();
         }
@@ -31,10 +33,10 @@ class BlockStoneButton extends StoneButton implements IRedstoneComponent, ILinkR
         return true;
     }
 
-    public function onScheduledUpdate(): void {
-        if (!$this->isPressed()) return;
+    public function onScheduledUpdate() : void{
+        if(!$this->isPressed()) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, !$this->isPressed(), $this->isPressed());
             $event->call();
         }
@@ -42,22 +44,22 @@ class BlockStoneButton extends StoneButton implements IRedstoneComponent, ILinkR
         BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
-        if ($this->isPressed()) BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
+        if($this->isPressed()) BlockUpdateHelper::updateAroundDirectionRedstone($this, Facing::opposite($this->getFacing()));
         return true;
     }
 
-    public function getStrongPower(int $face): int {
-        if (!$this->isPressed()) return 0;
+    public function getStrongPower(int $face) : int{
+        if(!$this->isPressed()) return 0;
         return $face === $this->getFacing() ? 15 : 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return $this->isPressed() ? 15 : 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return $this->isPressed();
     }
 }

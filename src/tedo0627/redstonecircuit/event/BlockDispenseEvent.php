@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\event;
 
 use pocketmine\block\Block;
@@ -8,18 +10,18 @@ use pocketmine\event\Cancellable;
 use pocketmine\event\CancellableTrait;
 use pocketmine\item\Item;
 
-class BlockDispenseEvent extends BlockEvent implements Cancellable {
+class BlockDispenseEvent extends BlockEvent implements Cancellable{
     use CancellableTrait;
 
     private Item $item;
 
-    public function __construct(Block $block, Item $item) {
+    public function __construct(Block $block, Item $item){
         parent::__construct($block);
 
         $this->item = $item;
     }
 
-    public function getItem(): Item {
+    public function getItem() : Item{
         return $this->item;
     }
 }

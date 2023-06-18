@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block;
 
-trait RedstoneComponentTrait {
+trait RedstoneComponentTrait{
 
-    public function getStrongPower(int $face): int {
+    public function getStrongPower(int $face) : int{
         return 0;
     }
 
-    public function getWeakPower(int $face): int {
+    public function getWeakPower(int $face) : int{
         return 0;
     }
 
-    public function isPowerSource(): bool {
+    public function isPowerSource() : bool{
         return false;
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
     }
 }

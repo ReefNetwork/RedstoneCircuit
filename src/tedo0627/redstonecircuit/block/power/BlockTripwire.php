@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\power;
 
 use pocketmine\block\Block;
@@ -12,22 +14,23 @@ use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
 use pocketmine\world\BlockTransaction;
+use function count;
 
-class BlockTripwire extends Tripwire {
+class BlockTripwire extends Tripwire{
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
+    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
         $this->setSuspended(true);
         return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
     }
 
-    public function onPostPlace(): void {
+    public function onPostPlace() : void{
         $faces = [Facing::SOUTH, Facing::WEST];
-        for ($i = 0; $i < count($faces); $i++) {
+        for($i = 0; $i < count($faces); $i++){
             $face = $faces[$i];
-            for ($j = 1; $j < 41; $j++) {
+            for($j = 1; $j < 41; $j++){
                 $block = $this->getSide($face, $j);
-                if ($block instanceof BlockTripwire) continue;
-                if ($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)) {
+                if($block instanceof BlockTripwire) continue;
+                if($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)){
                     $block->tryConnect();
                 }
                 break;
@@ -35,17 +38,17 @@ class BlockTripwire extends Tripwire {
         }
     }
 
-    public function onBreak(Item $item, ?Player $player = null): bool {
+    public function onBreak(Item $item, ?Player $player = null, array &$returnedItems = []) : bool{
         parent::onBreak($item, $player);
-        if (!$this->isConnected()) return true;
+        if(!$this->isConnected()) return true;
 
         $faces = [Facing::SOUTH, Facing::WEST];
-        for ($i = 0; $i < count($faces); $i++) {
+        for($i = 0; $i < count($faces); $i++){
             $face = $faces[$i];
-            for ($j = 1; $j < 41; $j++) {
+            for($j = 1; $j < 41; $j++){
                 $block = $this->getSide($face, $j);
-                if ($block instanceof BlockTripwire) continue;
-                if ($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)) {
+                if($block instanceof BlockTripwire) continue;
+                if($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)){
                     $block->disconnect($j, $item->getId() !== ItemIds::SHEARS);
                 }
                 break;
@@ -54,10 +57,10 @@ class BlockTripwire extends Tripwire {
         return true;
     }
 
-    public function onScheduledUpdate(): void {
-        if ($this->isTriggered()) {
+    public function onScheduledUpdate() : void{
+        if($this->isTriggered()){
             $entities = $this->getPosition()->getWorld()->getNearbyEntities($this->getHitCollision());
-            if (count($entities) > 0) return;
+            if(count($entities) > 0) return;
 
             $this->setTriggered(false);
             $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
@@ -69,9 +72,9 @@ class BlockTripwire extends Tripwire {
         $this->getPosition()->getWorld()->setBlock($this->getPosition(), $this);
     }
 
-    public function onEntityInside(Entity $entity): bool {
+    public function onEntityInside(Entity $entity) : bool{
         $entities = $this->getPosition()->getWorld()->getNearbyEntities($this->getHitCollision());
-        if (count($entities) <= 0) return true;
+        if(count($entities) <= 0) return true;
 
         $this->setTriggered(true);
         $world = $this->getPosition()->getWorld();
@@ -79,12 +82,12 @@ class BlockTripwire extends Tripwire {
         $world->scheduleDelayedBlockUpdate($this->getPosition(), 1);
 
         $faces = [Facing::SOUTH, Facing::WEST];
-        for ($i = 0; $i < count($faces); $i++) {
+        for($i = 0; $i < count($faces); $i++){
             $face = $faces[$i];
-            for ($j = 1; $j < 41; $j++) {
+            for($j = 1; $j < 41; $j++){
                 $block = $this->getSide($face, $j);
-                if ($block instanceof BlockTripwire) continue;
-                if ($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)) {
+                if($block instanceof BlockTripwire) continue;
+                if($block instanceof BlockTripwireHook && $block->getFacing() == Facing::opposite($face)){
                     $block->trigger();
                 }
                 break;
@@ -93,11 +96,11 @@ class BlockTripwire extends Tripwire {
         return true;
     }
 
-    public function hasEntityCollision(): bool {
+    public function hasEntityCollision() : bool{
         return true;
     }
 
-    protected function getHitCollision(): AxisAlignedBB {
+    protected function getHitCollision() : AxisAlignedBB{
         return new AxisAlignedBB(
             $this->getPosition()->getX(),
             $this->getPosition()->getY(),

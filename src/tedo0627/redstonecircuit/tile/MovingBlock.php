@@ -1,15 +1,17 @@
 <?php
 
-namespace tedo0627\redstonecircuit\block\entity;
+declare(strict_types=1);
+
+namespace tedo0627\redstonecircuit\tile;
 
 use pocketmine\block\tile\Spawnable;
 use pocketmine\nbt\tag\CompoundTag;
 use tedo0627\redstonecircuit\block\MovingBlockTrait;
 
-class BlockEntityMoving extends Spawnable {
+class MovingBlock extends Spawnable{
     use MovingBlockTrait;
 
-    public function readSaveData(CompoundTag $nbt): void {
+    public function readSaveData(CompoundTag $nbt) : void{
         $this->setExpanding($nbt->getByte("expanding", 0));
 
         $this->setPistonPosX($nbt->getInt("pistonPosX", 0));
@@ -17,19 +19,19 @@ class BlockEntityMoving extends Spawnable {
         $this->setPistonPosZ($nbt->getInt("pistonPosZ", 0));
 
         $tag = $nbt->getCompoundTag("movingBlock");
-        if ($tag !== null) {
+        if($tag !== null){
             $this->setMovingBlockName($tag->getString("name", "minecraft:air"));
             $this->setMovingBlockStates($tag->getCompoundTag("states") ?? new CompoundTag());
-        } else {
+        }else{
             $this->setMovingBlockName("minecraft:air");
             $this->setMovingBlockStates(new CompoundTag());
         }
 
         $tag = $nbt->getCompoundTag("movingEntity");
-        if ($tag !== null) $this->setMovingEntity($tag);
+        if($tag !== null) $this->setMovingEntity($tag);
     }
 
-    protected function writeSaveData(CompoundTag $nbt): void {
+    protected function writeSaveData(CompoundTag $nbt) : void{
         $nbt->setByte("expanding", $this->isExpanding());
 
         $nbt->setInt("pistonPosX", $this->getPistonPosX());
@@ -42,10 +44,10 @@ class BlockEntityMoving extends Spawnable {
         $nbt->setTag("movingBlock", $tag);
 
         $tag = $this->getMovingEntity();
-        if ($tag !== null) $nbt->setTag("movingEntity", $this->getMovingEntity());
+        if($tag !== null) $nbt->setTag("movingEntity", $this->getMovingEntity());
     }
 
-    protected function addAdditionalSpawnData(CompoundTag $nbt): void {
+    protected function addAdditionalSpawnData(CompoundTag $nbt) : void{
         $nbt->setByte("expanding", $this->isExpanding());
 
         $nbt->setInt("pistonPosX", $this->getPistonPosX());
@@ -63,6 +65,6 @@ class BlockEntityMoving extends Spawnable {
         $nbt->setTag("movingBlockExtra", $tag);
 
         $tag = $this->getMovingEntity();
-        if ($tag !== null) $nbt->setTag("movingEntity", $this->getMovingEntity());
+        if($tag !== null) $nbt->setTag("movingEntity", $this->getMovingEntity());
     }
 }

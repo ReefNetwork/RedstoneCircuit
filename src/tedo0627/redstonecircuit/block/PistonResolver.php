@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block;
 
 use pocketmine\block\BaseSign;
 use pocketmine\block\Block;
-use pocketmine\block\BlockLegacyIds as Ids;
 use pocketmine\block\Door;
 use pocketmine\block\Flowable;
 use pocketmine\block\GlazedTerracotta;
@@ -15,8 +16,11 @@ use pocketmine\world\Position;
 use pocketmine\world\World;
 use tedo0627\redstonecircuit\block\mechanism\BlockPiston;
 use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
+use function count;
+use function in_array;
+use function usort;
 
-class PistonResolver {
+class PistonResolver{
 
     private BlockPiston $piston;
     private bool $sticky;
@@ -32,14 +36,14 @@ class PistonResolver {
 
     private bool $success = false;
 
-    public function __construct(BlockPiston $piston, bool $sticky, bool $push) {
+    public function __construct(BlockPiston $piston, bool $sticky, bool $push){
         $this->piston = $piston;
         $this->sticky = $sticky;
         $this->push = $push;
 
-        if (!$push) {
+        if(!$push){
             $arm = $piston->getSide($piston->getPistonArmFace());
-            if ($arm instanceof BlockPistonArmCollision && $arm->getFacing() === $piston->getFacing()) {
+            if($arm instanceof BlockPistonArmCollision && $arm->getFacing() === $piston->getFacing()){
                 $pos = $arm->getPosition();
                 $hash = World::chunkBlockHash($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ());
                 $this->checked[] = $hash;
@@ -47,17 +51,17 @@ class PistonResolver {
         }
     }
 
-    public function resolve(): void {
+    public function resolve() : void{
         $face = $this->piston->getPistonArmFace();
-        if ($this->push) {
-            if ($this->calculateBlocks($this->piston->getSide($face), $face, $face)) $this->success = true;
-        } else {
-            if ($this->sticky) {
+        if($this->push){
+            if($this->calculateBlocks($this->piston->getSide($face), $face, $face)) $this->success = true;
+        }else{
+            if($this->sticky){
                 $this->calculateBlocks($this->piston->getSide($face, 2), $face, Facing::opposite($face));
             }
             $this->success = true;
         }
-        usort($this->attach, function(Block $a, Block $b) {
+        usort($this->attach, function(Block $a, Block $b){
             $pos1 = $a->getPosition();
             $pos2 = $b->getPosition();
             $face = $this->piston->getPistonArmFace();
@@ -70,57 +74,57 @@ class PistonResolver {
         });
     }
 
-    private function calculateBlocks(Block $block, int $face, int $breakFace): bool {
+    private function calculateBlocks(Block $block, int $face, int $breakFace) : bool{
         $pos = $block->getPosition();
         $hash = World::chunkBlockHash($pos->getFloorX(), $pos->getFloorY(), $pos->getFloorZ());
-        if (in_array($hash, $this->checked, true)) return true;
+        if(in_array($hash, $this->checked, true)) return true;
 
         $this->checked[] = $hash;
-        if ($block->getId() === Ids::AIR) return true;
-        if (!$this->canMove($block)) {
+        if($block->getId() === Ids::AIR) return true;
+        if(!$this->canMove($block)){
             $result = $face !== $breakFace;
-            if (!$result) {
+            if(!$result){
                 $this->break = [];
                 $this->attach = [];
             }
             return $result;
         }
 
-        if ($this->canBreak($block)) {
-            if ($face === $breakFace) $this->break[] = $block;
+        if($this->canBreak($block)){
+            if($face === $breakFace) $this->break[] = $block;
             return true;
         }
 
         $sideBlock = $block->getPosition()->getSide($breakFace);
-        if (!$this->isLoaded($sideBlock)) {
+        if(!$this->isLoaded($sideBlock)){
             $this->break = [];
             $this->attach = [];
             return false;
         }
 
-        if ($block instanceof GlazedTerracotta && $face !== $breakFace) return true;
+        if($block instanceof GlazedTerracotta && $face !== $breakFace) return true;
 
         $this->attach[] = $block;
-        if (count($this->attach) >= 13) {
+        if(count($this->attach) >= 13){
             $this->break = [];
             $this->attach = [];
             return false;
         }
 
-        if ($block->getId() === Ids::SLIME) {
-            for ($i = 0; $i < 6; $i++) {
-                if ($i === Facing::opposite($face)) continue;
-                if (!$this->calculateBlocks($block->getSide($i), $i, $breakFace)) return false;
+        if($block->getId() === Ids::SLIME){
+            for($i = 0; $i < 6; $i++){
+                if($i === Facing::opposite($face)) continue;
+                if(!$this->calculateBlocks($block->getSide($i), $i, $breakFace)) return false;
             }
-        } else {
-            if (!$this->calculateBlocks($block->getSide($breakFace), $breakFace, $breakFace)) return false;
+        }else{
+            if(!$this->calculateBlocks($block->getSide($breakFace), $breakFace, $breakFace)) return false;
         }
         return true;
     }
 
-    private function isLoaded(Position $position): bool {
+    private function isLoaded(Position $position) : bool{
         $world = $position->getWorld();
-        if (!$world->isInWorld($position->getX(), $position->getY(), $position->getZ())) return false;
+        if(!$world->isInWorld($position->getX(), $position->getY(), $position->getZ())) return false;
 
         $chunkX = $position->getX() >> Chunk::COORD_BIT_SIZE;
         $chunkZ = $position->getZ() >> Chunk::COORD_BIT_SIZE;
@@ -128,22 +132,22 @@ class PistonResolver {
     }
 
     /** @return Block[] */
-    public function getAttachBlocks(): array {
+    public function getAttachBlocks() : array{
         return $this->attach;
     }
 
     /** @return Block[] */
-    public function getBreakBlocks(): array {
+    public function getBreakBlocks() : array{
         return $this->break;
     }
 
-    public function isSuccess(): bool {
+    public function isSuccess() : bool{
         return $this->success;
     }
 
-    private function canMove(Block $block): bool {
-        if ($block instanceof BlockPiston) {
-            if ($this->piston->getPosition()->equals($block->getPosition())) return false;
+    private function canMove(Block $block) : bool{
+        if($block instanceof BlockPiston){
+            if($this->piston->getPosition()->equals($block->getPosition())) return false;
             return $block->getState() === 0;
         }
         $ids = [
@@ -158,10 +162,10 @@ class PistonResolver {
         return !in_array($block->getId(), $ids, true);
     }
 
-    private function canBreak(Block $block): bool {
-        if ($block instanceof Flowable) return true;
-        if ($block instanceof Door) return true;
-        if ($block instanceof BaseSign) return true;
+    private function canBreak(Block $block) : bool{
+        if($block instanceof Flowable) return true;
+        if($block instanceof Door) return true;
+        if($block instanceof BaseSign) return true;
 
         $ids = [
             Ids::FLOWING_WATER, Ids::STILL_WATER, Ids::FLOWING_LAVA,

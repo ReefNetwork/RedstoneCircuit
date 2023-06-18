@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\event;
 
 use pocketmine\block\Hopper;
@@ -10,7 +12,7 @@ use pocketmine\event\CancellableTrait;
 use pocketmine\inventory\Inventory;
 use pocketmine\item\Item;
 
-class HopperPickupItemEvent extends BlockEvent implements Cancellable {
+class HopperPickupItemEvent extends BlockEvent implements Cancellable{
     use CancellableTrait;
 
     private Hopper $hopper;
@@ -18,7 +20,7 @@ class HopperPickupItemEvent extends BlockEvent implements Cancellable {
     private ItemEntity $entity;
     private Item $item;
 
-    public function __construct(Hopper $hopper, Inventory $inventory, ItemEntity $entity, Item $item) {
+    public function __construct(Hopper $hopper, Inventory $inventory, ItemEntity $entity, Item $item){
         parent::__construct($hopper);
 
         $this->hopper = $hopper;
@@ -27,19 +29,19 @@ class HopperPickupItemEvent extends BlockEvent implements Cancellable {
         $this->item = $item;
     }
 
-    public function getHopper(): Hopper {
+    public function getHopper() : Hopper{
         return $this->hopper;
     }
 
-    public function getInventory(): Inventory {
+    public function getInventory() : Inventory{
         return $this->inventory;
     }
 
-    public function getItemEntity(): ItemEntity {
+    public function getItemEntity() : ItemEntity{
         return $this->entity;
     }
 
-    public function getItem(): Item {
+    public function getItem() : Item{
         return $this->item;
     }
 }

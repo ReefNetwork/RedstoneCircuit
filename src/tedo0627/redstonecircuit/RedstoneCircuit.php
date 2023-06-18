@@ -1,89 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit;
 
-use Closure;
 use pocketmine\block\Block;
-use pocketmine\block\BlockBreakInfo;
-use pocketmine\block\BlockIdentifier;
-use pocketmine\block\BlockIdentifierFlattened;
-use pocketmine\block\BlockLegacyIds as Ids;
-use pocketmine\block\BlockToolType;
-use pocketmine\inventory\CreativeInventory;
-use pocketmine\item\ItemIdentifier;
-use pocketmine\item\ItemIds;
-use pocketmine\item\ToolTier;
-use pocketmine\network\mcpe\convert\RuntimeBlockMapping;
+use pocketmine\block\RuntimeBlockStateRegistry;
+use pocketmine\data\bedrock\block\BlockStateNames as StateNames;
+use pocketmine\data\bedrock\block\BlockTypeNames as Ids;
+use pocketmine\data\bedrock\block\convert\BlockStateReader as Reader;
+use pocketmine\data\bedrock\block\convert\BlockStateWriter as Writer;
+use pocketmine\event\EventPriority;
+use pocketmine\event\player\PlayerJoinEvent;
+use pocketmine\inventory\Inventory;
+use pocketmine\item\StringToItemParser;
+use pocketmine\network\mcpe\protocol\ContainerOpenPacket;
+use pocketmine\network\mcpe\protocol\types\BlockPosition;
+use pocketmine\network\mcpe\protocol\types\inventory\WindowTypes;
 use pocketmine\plugin\PluginBase;
 use pocketmine\scheduler\AsyncTask;
-use ReflectionMethod;
-use tedo0627\redstonecircuit\block\BlockTable;
-use tedo0627\redstonecircuit\block\entity\BlockEntityChest;
-use tedo0627\redstonecircuit\block\entity\BlockEntityCommand;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDispenser;
-use tedo0627\redstonecircuit\block\entity\BlockEntityDropper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityHopper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityMoving;
-use tedo0627\redstonecircuit\block\entity\BlockEntityNote;
-use tedo0627\redstonecircuit\block\entity\BlockEntityObserver;
-use tedo0627\redstonecircuit\block\entity\BlockEntityPistonArm;
-use tedo0627\redstonecircuit\block\entity\BlockEntitySkull;
-use tedo0627\redstonecircuit\block\entity\BlockEntityTarget;
-use tedo0627\redstonecircuit\block\mechanism\BlockActivatorRail;
+use pocketmine\utils\SingletonTrait;
+use pocketmine\world\format\io\GlobalBlockStateHandlers;
+use tedo0627\redstonecircuit\block\ExtraVanillaBlocks;
+use tedo0627\redstonecircuit\block\inventory\CommandInventory;
+use tedo0627\redstonecircuit\block\inventory\DispenserInventory;
+use tedo0627\redstonecircuit\block\inventory\DropperInventory;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
-use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
-use tedo0627\redstonecircuit\block\mechanism\BlockDropper;
-use tedo0627\redstonecircuit\block\mechanism\BlockFenceGate;
-use tedo0627\redstonecircuit\block\mechanism\BlockHopper;
-use tedo0627\redstonecircuit\block\mechanism\BlockIronDoor;
-use tedo0627\redstonecircuit\block\mechanism\BlockIronTrapdoor;
-use tedo0627\redstonecircuit\block\mechanism\BlockMoving;
-use tedo0627\redstonecircuit\block\mechanism\BlockNote;
-use tedo0627\redstonecircuit\block\mechanism\BlockPiston;
-use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
-use tedo0627\redstonecircuit\block\mechanism\BlockPoweredRail;
-use tedo0627\redstonecircuit\block\mechanism\BlockRedstoneLamp;
-use tedo0627\redstonecircuit\block\mechanism\BlockSkull;
-use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
-use tedo0627\redstonecircuit\block\mechanism\BlockStickyPistonArmCollision;
-use tedo0627\redstonecircuit\block\mechanism\BlockTNT;
-use tedo0627\redstonecircuit\block\mechanism\BlockWoodenDoor;
-use tedo0627\redstonecircuit\block\mechanism\BlockWoodenTrapdoor;
-use tedo0627\redstonecircuit\block\power\BlockDaylightSensor;
-use tedo0627\redstonecircuit\block\power\BlockJukeBox;
-use tedo0627\redstonecircuit\block\power\BlockLever;
-use tedo0627\redstonecircuit\block\power\BlockObserver;
-use tedo0627\redstonecircuit\block\power\BlockRedstone;
-use tedo0627\redstonecircuit\block\power\BlockRedstoneTorch;
-use tedo0627\redstonecircuit\block\power\BlockStoneButton;
-use tedo0627\redstonecircuit\block\power\BlockStonePressurePlate;
-use tedo0627\redstonecircuit\block\power\BlockTarget;
-use tedo0627\redstonecircuit\block\power\BlockTrappedChest;
-use tedo0627\redstonecircuit\block\power\BlockTripwire;
-use tedo0627\redstonecircuit\block\power\BlockTripwireHook;
-use tedo0627\redstonecircuit\block\power\BlockWeightedPressurePlateHeavy;
-use tedo0627\redstonecircuit\block\power\BlockWeightedPressurePlateLight;
-use tedo0627\redstonecircuit\block\power\BlockWoodenButton;
-use tedo0627\redstonecircuit\block\power\BlockWoodenPressurePlate;
-use tedo0627\redstonecircuit\block\transmission\BlockRedstoneComparator;
-use tedo0627\redstonecircuit\block\transmission\BlockRedstoneRepeater;
-use tedo0627\redstonecircuit\block\transmission\BlockRedstoneWire;
 use tedo0627\redstonecircuit\listener\CommandBlockListener;
-use tedo0627\redstonecircuit\listener\InventoryListener;
 use tedo0627\redstonecircuit\listener\TargetBlockListener;
-use tedo0627\redstonecircuit\loader\BlockEntityLoader;
-use tedo0627\redstonecircuit\loader\BlockLoader;
-use tedo0627\redstonecircuit\loader\ItemBlockLoader;
-use tedo0627\redstonecircuit\loader\Loader;
 
-class RedstoneCircuit extends PluginBase {
+class RedstoneCircuit extends PluginBase{
+    use SingletonTrait{
+        setInstance as private;
+        reset as private;
+    }
 
     private static bool $callEvent = false;
 
-    /** @var Loader[] */
-    private array $loader = [];
-
-    public function onLoad(): void {
+    /*public function onLoad(): void {
         // mechanism
         $this->addBlock("command_block", new BlockCommand(new BlockIdentifierFlattened(Ids::COMMAND_BLOCK, [Ids::REPEATING_COMMAND_BLOCK, Ids::CHAIN_COMMAND_BLOCK], 0, null, BlockEntityCommand::class), "Command Block", BlockBreakInfo::indestructible()));
         $this->addBlockEntity("command_block", BlockEntityCommand::class, ["CommandBlock", "minecraft:command_block"]);
@@ -193,64 +147,103 @@ class RedstoneCircuit extends PluginBase {
         });
 
         CreativeInventory::reset();
+    }*/
+
+    public function onLoad() : void{
+        self::setInstance($this);
     }
 
-    public function onEnable(): void {
+    public function onEnable() : void{
         $this->getServer()->getPluginManager()->registerEvents(new CommandBlockListener(), $this);
-        $this->getServer()->getPluginManager()->registerEvents(new InventoryListener(), $this);
+        $this->getServer()->getPluginManager()->registerEvent(PlayerJoinEvent::class,
+            static function(PlayerJoinEvent $event){
+                $callbackSet = $event->getPlayer()->getNetworkSession()->getInvManager()->getContainerOpenCallbacks(); // inventory manager always exists at this point
+                $callbackSet->add(static fn(int $id, Inventory $inv) => $inv instanceof CommandInventory ? [ContainerOpenPacket::blockInv($id, WindowTypes::COMMAND_BLOCK, BlockPosition::fromVector3($inv->getHolder()))] : null);
+                $callbackSet->add(static fn(int $id, Inventory $inv) => $inv instanceof DispenserInventory ? [ContainerOpenPacket::blockInv($id, WindowTypes::DISPENSER, BlockPosition::fromVector3($inv->getHolder()))] : null);
+                $callbackSet->add(static fn(int $id, Inventory $inv) => $inv instanceof DropperInventory ? [ContainerOpenPacket::blockInv($id, WindowTypes::DROPPER, BlockPosition::fromVector3($inv->getHolder()))] : null);
+            },
+            EventPriority::LOWEST,
+            $this,
+            true
+        );
         $this->getServer()->getPluginManager()->registerEvents(new TargetBlockListener(), $this);
 
-        self::$callEvent = $this->getConfig()->get("event", false);
+        self::$callEvent = (bool) $this->getConfig()->get("event", false);
+
+        self::registerBlocks();
+
+        $this->getServer()->getAsyncPool()->addWorkerStartHook(function(int $worker) : void{
+            $this->getServer()->getAsyncPool()->submitTaskToWorker(new class extends AsyncTask{
+                public function onRun() : void{
+                    RedstoneCircuit::registerBlocks();
+                }
+            }, $worker);
+        });
     }
 
-    private function overrideBlock(string $name, int $id, Closure $callback, ?string $class = null): void {
-        $this->loader[] = BlockLoader::createBlock($name, $id, $callback, $class);
+    public static function registerBlocks() : void{
+        RuntimeBlockStateRegistry::getInstance()->register(ExtraVanillaBlocks::COMMAND_BLOCK());
+        GlobalBlockStateHandlers::getDeserializer()->map(Ids::COMMAND_BLOCK, function(Reader $in) : Block{
+            return ExtraVanillaBlocks::COMMAND_BLOCK()
+                ->setConditionalMode($in->readBool(StateNames::CONDITIONAL_BIT))
+                ->setFacing($in->readFacingDirection());
+        });
+        GlobalBlockStateHandlers::getSerializer()->map(ExtraVanillaBlocks::COMMAND_BLOCK(), function(BlockCommand $block) : Writer{
+            return Writer::create(Ids::COMMAND_BLOCK)
+                ->writeBool(StateNames::CONDITIONAL_BIT, $block->isConditionalMode())
+                ->writeFacingDirection($block->getFacing());
+        });
+        StringToItemParser::getInstance()->registerBlock("command_block", fn() => clone ExtraVanillaBlocks::COMMAND_BLOCK());
+
+        RuntimeBlockStateRegistry::getInstance()->register(ExtraVanillaBlocks::REPEATING_COMMAND_BLOCK());
+        GlobalBlockStateHandlers::getDeserializer()->map(Ids::REPEATING_COMMAND_BLOCK, function(Reader $in) : Block{
+            return ExtraVanillaBlocks::REPEATING_COMMAND_BLOCK()
+                ->setConditionalMode($in->readBool(StateNames::CONDITIONAL_BIT))
+                ->setFacing($in->readFacingDirection());
+        });
+        GlobalBlockStateHandlers::getSerializer()->map(ExtraVanillaBlocks::REPEATING_COMMAND_BLOCK(), function(BlockCommand $block) : Writer{
+            return Writer::create(Ids::REPEATING_COMMAND_BLOCK)
+                ->writeBool(StateNames::CONDITIONAL_BIT, $block->isConditionalMode())
+                ->writeFacingDirection($block->getFacing());
+        });
+        StringToItemParser::getInstance()->registerBlock("repeating_command_block", fn() => clone ExtraVanillaBlocks::REPEATING_COMMAND_BLOCK());
+
+        RuntimeBlockStateRegistry::getInstance()->register(ExtraVanillaBlocks::CHAIN_COMMAND_BLOCK());
+        GlobalBlockStateHandlers::getDeserializer()->map(Ids::CHAIN_COMMAND_BLOCK, function(Reader $in) : Block{
+            return ExtraVanillaBlocks::CHAIN_COMMAND_BLOCK()
+                ->setConditionalMode($in->readBool(StateNames::CONDITIONAL_BIT))
+                ->setFacing($in->readFacingDirection());
+        });
+        GlobalBlockStateHandlers::getSerializer()->map(ExtraVanillaBlocks::CHAIN_COMMAND_BLOCK(), function(BlockCommand $block) : Writer{
+            return Writer::create(Ids::CHAIN_COMMAND_BLOCK)
+                ->writeBool(StateNames::CONDITIONAL_BIT, $block->isConditionalMode())
+                ->writeFacingDirection($block->getFacing());
+        });
+        StringToItemParser::getInstance()->registerBlock("chain_command_block", fn() => clone ExtraVanillaBlocks::CHAIN_COMMAND_BLOCK());
+
+        self::registerSimpleBlock(Ids::DISPENSER, ExtraVanillaBlocks::DISPENSER(), ["Dispenser"]);
+        self::registerSimpleBlock(Ids::DROPPER, ExtraVanillaBlocks::DROPPER(), ["dropper"]);
+        self::registerSimpleBlock(Ids::PISTON, ExtraVanillaBlocks::PISTON(), ["piston"]);
+        self::registerSimpleBlock(Ids::STICKY_PISTON, ExtraVanillaBlocks::STICKY_PISTON(), ["sticky_piston"]);
+        self::registerSimpleBlock(Ids::OBSERVER, ExtraVanillaBlocks::OBSERVER(), ["observer"]);
+        self::registerSimpleBlock(Ids::TARGET, ExtraVanillaBlocks::TARGET(), ["target"]);
     }
 
-    private function overrideBlocks(string $name, array $ids, Closure $callback, ?string $class = null): void {
-        foreach ($ids as $id) $this->overrideBlock($name, $id, $callback, $class);
-    }
+    /**
+     * @param string[] $stringToItemParserNames
+     */
+    private static function registerSimpleBlock(string $id, Block $block, array $stringToItemParserNames) : void{
+        RuntimeBlockStateRegistry::getInstance()->register($block);
 
-    private function addBlock(string $name, Block $block, bool $addCreative = false): void {
-        $this->loader[] = new BlockLoader($name, $block, $addCreative);
-    }
+        GlobalBlockStateHandlers::getDeserializer()->mapSimple($id, fn() => clone $block);
+        GlobalBlockStateHandlers::getSerializer()->mapSimple($block, $id);
 
-    private function addItemBlock(string $name, int $blockId, ItemIdentifier $identifier): void {
-        $this->loader[] = new ItemBlockLoader($name, $blockId, $identifier);
-    }
-
-    private function addBlockEntity(string $name, string $className, array $saveNames): void {
-        $this->loader[] = new BlockEntityLoader($name, $className, $saveNames);
-    }
-
-    private function load(): void {
-        $config = $this->getConfig();
-        for ($i = 0; $i < count($this->loader); $i++) {
-            $loader = $this->loader[$i];
-            if ($config->getNested("blocks." . $loader->getName(), true)) $loader->load();
+        foreach($stringToItemParserNames as $name){
+            StringToItemParser::getInstance()->registerBlock($name, fn() => clone $block);
         }
     }
 
-    public static function registerMappings(): void {
-        $mapping = RuntimeBlockMapping::getInstance();
-        $update = $mapping->toRuntimeId(Ids::INFO_UPDATE << Block::INTERNAL_METADATA_BITS);
-        $table = BlockTable::getInstance();
-        $method = new ReflectionMethod(RuntimeBlockMapping::class, "registerMapping");
-        $method->setAccessible(true);
-        foreach ($mapping->getBedrockKnownStates() as $runtimeId => $tag) {
-            $name = $tag->getString("name");
-            if (!$table->existsId($name)) continue;
-
-            $id = $table->getId($name);
-            $states = $tag->getCompoundTag("states");
-            $damage = $table->getDamage($id, $states);
-            if ($mapping->toRuntimeId(($id << Block::INTERNAL_METADATA_BITS) | $damage) !== $update) continue;
-
-            $method->invoke($mapping, $runtimeId, $id, $damage);
-        }
-    }
-
-    public static function isCallEvent(): bool {
+    public static function isCallEvent() : bool{
         return self::$callEvent;
     }
 }

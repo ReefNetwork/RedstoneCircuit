@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\mechanism;
 
 use pocketmine\block\Block;
-use pocketmine\block\BlockLegacyIds as Ids;
 use pocketmine\block\Note;
 use pocketmine\block\utils\PoweredByRedstoneTrait;
 use pocketmine\item\Item;
@@ -16,55 +17,56 @@ use pocketmine\world\BlockTransaction;
 use pocketmine\world\sound\NoteInstrument;
 use pocketmine\world\sound\NoteSound;
 use tedo0627\redstonecircuit\block\BlockPowerHelper;
-use tedo0627\redstonecircuit\block\entity\BlockEntityNote;
 use tedo0627\redstonecircuit\block\IRedstoneComponent;
 use tedo0627\redstonecircuit\block\RedstoneComponentTrait;
 use tedo0627\redstonecircuit\event\BlockRedstonePowerUpdateEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
+use tedo0627\redstonecircuit\tile\NoteBlock;
+use function assert;
 
-class BlockNote extends Note implements IRedstoneComponent {
+class BlockNote extends Note implements IRedstoneComponent{
     use PoweredByRedstoneTrait;
     use RedstoneComponentTrait;
 
-    public function readStateFromWorld(): void {
+    public function readStateFromWorld() : Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if($tile instanceof BlockEntityNote) $this->setPowered($tile->isPowered());
+        if($tile instanceof NoteBlock) $this->setPowered($tile->isPowered());
     }
 
-    public function writeStateToWorld(): void {
+    public function writeStateToWorld() : void{
         parent::writeStateToWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        assert($tile instanceof BlockEntityNote);
+        assert($tile instanceof NoteBlock);
         $tile->setPowered($this->isPowered());
     }
 
-    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null): bool {
+    public function place(BlockTransaction $tx, Item $item, Block $blockReplace, Block $blockClicked, int $face, Vector3 $clickVector, ?Player $player = null) : bool{
         $this->setPowered(BlockPowerHelper::isPowered($blockReplace));
         return parent::place($tx, $item, $blockReplace, $blockClicked, $face, $clickVector, $player);
     }
 
-    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null): bool {
+    public function onInteract(Item $item, int $face, Vector3 $clickVector, ?Player $player = null, array &$returnedItems = []) : bool{
         $pitch = $this->getPitch() + 1;
-        if ($pitch > Note::MAX_PITCH) $pitch = Note::MIN_PITCH;
+        if($pitch > Note::MAX_PITCH) $pitch = Note::MIN_PITCH;
         $this->setPitch($pitch);
         $this->playSound();
         return true;
     }
 
-    public function onAttack(Item $item, int $face, ?Player $player = null): bool {
+    public function onAttack(Item $item, int $face, ?Player $player = null) : bool{
         $this->playSound();
         return false;
     }
 
-    public function playSound() {
+    public function playSound(){
         $pos = $this->getPosition();
         $world = $pos->getWorld();
         $world->addSound($pos, new NoteSound($this->getSound(), $this->getPitch()));
         $world->broadcastPacketToViewers($pos, BlockEventPacket::create(BlockPosition::fromVector3($pos), 1, $this->getPitch()));
     }
 
-    public function getSound(): NoteInstrument {
+    public function getSound() : NoteInstrument{
         return match ($this->getSide(Facing::DOWN)->getId()) {
             Ids::STONE, Ids::COBBLESTONE, Ids::GOLD_ORE, Ids::IRON_ORE, Ids::COAL_ORE,
             Ids::LAPIS_ORE, Ids::BRICK_BLOCK, Ids::MOSSY_COBBLESTONE, Ids::OBSIDIAN,
@@ -88,19 +90,19 @@ class BlockNote extends Note implements IRedstoneComponent {
         };
     }
 
-    public function onRedstoneUpdate(): void {
+    public function onRedstoneUpdate() : void{
         $powered = BlockPowerHelper::isPowered($this);
-        if ($powered === $this->isPowered()) return;
+        if($powered === $this->isPowered()) return;
 
-        if (RedstoneCircuit::isCallEvent()) {
+        if(RedstoneCircuit::isCallEvent()){
             $event = new BlockRedstonePowerUpdateEvent($this, $powered, $this->isPowered());
             $event->call();
             $powered = $event->getNewPowered();
-            if ($powered === $this->isPowered()) return;
+            if($powered === $this->isPowered()) return;
         }
 
         $this->setPowered($powered);
         $this->writeStateToWorld();
-        if ($powered) $this->playSound();
+        if($powered) $this->playSound();
     }
 }

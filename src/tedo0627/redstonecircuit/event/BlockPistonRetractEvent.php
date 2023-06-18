@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\event;
 
 use pocketmine\block\Block;
 use tedo0627\redstonecircuit\block\mechanism\BlockPiston;
 
-class BlockPistonRetractEvent extends BlockPistonEvent {
+class BlockPistonRetractEvent extends BlockPistonEvent{
 
     /** @var Block[] */
     private array $moveBlocks;
@@ -13,11 +15,10 @@ class BlockPistonRetractEvent extends BlockPistonEvent {
     private array $breakBlocks;
 
     /**
-     * @param BlockPiston $piston
      * @param Block[] $moveBlocks
      * @param Block[] $breakBlocks
      */
-    public function __construct(BlockPiston $piston, array $moveBlocks, array $breakBlocks) {
+    public function __construct(BlockPiston $piston, array $moveBlocks, array $breakBlocks){
         parent::__construct($piston);
 
         $this->moveBlocks = $moveBlocks;
@@ -25,12 +26,12 @@ class BlockPistonRetractEvent extends BlockPistonEvent {
     }
 
     /** @return Block[] */
-    public function getMoveBlocks(): array {
+    public function getMoveBlocks() : array{
         return $this->moveBlocks;
     }
 
     /** @return Block[] */
-    public function getBreakBlocks(): array {
+    public function getBreakBlocks() : array{
         return $this->breakBlocks;
     }
 }

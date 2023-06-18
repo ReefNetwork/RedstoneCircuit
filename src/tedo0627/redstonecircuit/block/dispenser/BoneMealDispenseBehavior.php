@@ -1,29 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\dispenser;
 
-use pocketmine\block\Grass;
-use pocketmine\block\Sapling;
-use pocketmine\item\Fertilizer;
+use pocketmine\block\Air;
 use pocketmine\item\Item;
+use pocketmine\math\Facing;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 
-class BoneMealDispenseBehavior implements DispenseItemBehavior {
+class BoneMealDispenseBehavior implements DispenseItemBehavior{
 
-    private DispenseItemBehavior $default;
-
-    public function __construct() {
-        $this->default = new DefaultItemDispenseBehavior();
-    }
-
-    public function dispense(BlockDispenser $block, Item $item): ?Item {
+    public function dispense(BlockDispenser $block, Item $dispensedItem, Item &$remainingItem) : bool{
         $side = $block->getSide($block->getFacing());
-        if (!$item instanceof Fertilizer) return $this->default->dispense($block, $item);
-
-        if ($side instanceof Sapling || $side instanceof Grass) {
-            $side->onInteract($item, 0, $side->getPosition());
-            return null;
-        }
-        return null;
+        return !$side instanceof Air && $side->onInteract($dispensedItem, Facing::opposite($block->getFacing()), $side->getPosition());
     }
 }

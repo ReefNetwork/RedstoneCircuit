@@ -1,32 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace tedo0627\redstonecircuit\block\dispenser;
 
-use pocketmine\entity\Human;
+use pocketmine\entity\Living;
 use pocketmine\item\Item;
 use pocketmine\math\AxisAlignedBB;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 
-class ArmorDispenseBehavior implements DispenseItemBehavior {
+class ArmorDispenseBehavior implements DispenseItemBehavior{
 
     private int $slot;
-    private DispenseItemBehavior $default;
 
-    public function __construct(int $slot) {
+    public function __construct(int $slot){
         $this->slot = $slot;
-        $this->default = new DefaultItemDispenseBehavior();
     }
 
-    public function dispense(BlockDispenser $block, Item $item): ?Item {
+    public function dispense(BlockDispenser $block, Item $dispensedItem, Item &$remainingItem) : bool{
         $side = $block->getSide($block->getFacing());
         $pos = $side->getPosition();
-        $entities = $pos->getWorld()->getNearbyEntities(new AxisAlignedBB($pos->x, $pos->y, $pos->z, $pos->x + 1, $pos->y + 1, $pos->z + 1));
-        foreach ($entities as $entity) {
-            if (!$entity instanceof Human) continue;
+        foreach($pos->getWorld()->getNearbyEntities(new AxisAlignedBB($pos->x, $pos->y, $pos->z, $pos->x + 1, $pos->y + 1, $pos->z + 1)) as $entity){
+            if(!$entity instanceof Living) continue;
 
-            $entity->getArmorInventory()->setItem($this->slot, $item->pop());
-            return null;
+            $entity->getArmorInventory()->setItem($this->slot, $dispensedItem);
+            return true;
         }
-        return $this->default->dispense($block, $item);
+        return DispenserBehaviorRegistry::DEFAULT()->dispense($block, $dispensedItem, $remainingItem);
     }
 }

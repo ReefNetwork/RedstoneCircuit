@@ -15,7 +15,7 @@ class BlockMoving extends Transparent{
     public function readStateFromWorld() : \pocketmine\block\Block{
         parent::readStateFromWorld();
         $tile = $this->getPosition()->getWorld()->getTile($this->getPosition());
-        if(!$tile instanceof MovingBlock) return;
+        if(!$tile instanceof MovingBlock) return $this;
 
         $this->setExpanding($tile->isExpanding());
 

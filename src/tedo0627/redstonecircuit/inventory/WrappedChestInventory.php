@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace tedo0627\redstonecircuit\block\inventory;
+namespace tedo0627\redstonecircuit\inventory;
 
 use pocketmine\block\inventory\ChestInventory;
 use pocketmine\player\Player;

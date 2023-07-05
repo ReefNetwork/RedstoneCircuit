@@ -22,10 +22,10 @@ use pocketmine\scheduler\AsyncTask;
 use pocketmine\utils\SingletonTrait;
 use pocketmine\world\format\io\GlobalBlockStateHandlers;
 use tedo0627\redstonecircuit\block\ExtraVanillaBlocks;
-use tedo0627\redstonecircuit\block\inventory\CommandInventory;
-use tedo0627\redstonecircuit\block\inventory\DispenserInventory;
-use tedo0627\redstonecircuit\block\inventory\DropperInventory;
 use tedo0627\redstonecircuit\block\mechanism\BlockCommand;
+use tedo0627\redstonecircuit\inventory\CommandInventory;
+use tedo0627\redstonecircuit\inventory\DispenserInventory;
+use tedo0627\redstonecircuit\inventory\DropperInventory;
 use tedo0627\redstonecircuit\listener\CommandBlockListener;
 use tedo0627\redstonecircuit\listener\TargetBlockListener;
 

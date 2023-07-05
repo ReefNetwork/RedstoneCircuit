@@ -8,6 +8,13 @@
       "email": "email@example.com"
     }
   ],
-  "require": {
-  }
+  "require-dev": {
+    "pocketmine/pocketmine-mp": "^5.0.0"
+  },
+  "repositories": [
+    {
+      "type": "git",
+      "url": "https://github.com/pmmp/PocketMine-MP.git"
+    }
+  ]
 }

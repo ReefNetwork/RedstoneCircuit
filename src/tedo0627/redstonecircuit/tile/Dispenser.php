@@ -78,7 +78,7 @@ class Dispenser extends Spawnable implements Container, Nameable{
         $this->saveItems($nbt);
     }
 
-    public function getInventory() : DispenserInventory{
+    public function getInventory() : Inventory{
         return $this->inventory;
     }
 

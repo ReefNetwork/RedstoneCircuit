@@ -14,7 +14,7 @@ use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\world\sound\ClickSound;
 use pocketmine\world\World;
 use tedo0627\redstonecircuit\block\dispenser\DispenserBehaviorRegistry;
-use tedo0627\redstonecircuit\block\inventory\DispenserInventory;
+use pocketmine\inventory\Inventory;
 use tedo0627\redstonecircuit\block\mechanism\BlockDispenser;
 use tedo0627\redstonecircuit\event\BlockDispenseEvent;
 use tedo0627\redstonecircuit\RedstoneCircuit;
@@ -82,7 +82,7 @@ class Dispenser extends Spawnable implements Container, Nameable{
         return $this->inventory;
     }
 
-    public function getRealInventory() : DispenserInventory{
+    public function getRealInventory() : Inventory{
         return $this->inventory;
     }
 

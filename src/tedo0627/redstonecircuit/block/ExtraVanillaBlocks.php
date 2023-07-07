@@ -10,6 +10,7 @@ use pocketmine\block\BlockIdentifier;
 use pocketmine\block\BlockToolType;
 use pocketmine\block\BlockTypeIds;
 use pocketmine\block\BlockTypeInfo;
+use pocketmine\block\VanillaBlocks;
 use pocketmine\item\ToolTier;
 use pocketmine\utils\CloningRegistryTrait;
 use tedo0627\redstonecircuit\block\enums\CommandBlockType;
@@ -21,13 +22,16 @@ use tedo0627\redstonecircuit\block\mechanism\BlockPiston;
 use tedo0627\redstonecircuit\block\mechanism\BlockPistonArmCollision;
 use tedo0627\redstonecircuit\block\mechanism\BlockStickyPiston;
 use tedo0627\redstonecircuit\block\power\BlockObserver;
+use tedo0627\redstonecircuit\block\power\BlockRedstone;
 use tedo0627\redstonecircuit\block\power\BlockTarget;
+use tedo0627\redstonecircuit\block\transmission\BlockRedstoneComparator;
+use tedo0627\redstonecircuit\block\transmission\BlockRedstoneRepeater;
+use tedo0627\redstonecircuit\block\transmission\BlockRedstoneWire;
 use tedo0627\redstonecircuit\tile\ChainCommandBlock;
 use tedo0627\redstonecircuit\tile\Dispenser;
 use tedo0627\redstonecircuit\tile\Dropper;
 use tedo0627\redstonecircuit\tile\ImpulseCommandBlock;
 use tedo0627\redstonecircuit\tile\MovingBlock;
-use tedo0627\redstonecircuit\tile\Observer;
 use tedo0627\redstonecircuit\tile\PistonArm;
 use tedo0627\redstonecircuit\tile\RepeatingCommandBlock;
 
@@ -46,15 +50,23 @@ use tedo0627\redstonecircuit\tile\RepeatingCommandBlock;
  * @method static BlockStickyPiston STICKY_PISTON()
  * @method static BlockPistonArmCollision STICKY_PISTON_ARM_COLLISION()
  * @method static BlockTarget TARGET()
+ *
+ * @method static BlockRedstone REDSTONE()
+ * @method static BlockRedstoneWire REDSTONE_WIRE()
+ * @method static BlockRedstoneRepeater REDSTONE_REPEATER()
+ * @method static BlockRedstoneComparator REDSTONE_COMPARATOR()
  */
-final class ExtraVanillaBlocks{
+final class ExtraVanillaBlocks
+{
     use CloningRegistryTrait;
 
-    private function __construct(){
+    private function __construct()
+    {
         //NOOP
     }
 
-    protected static function register(string $name, Block $block) : void{
+    protected static function register(string $name, Block $block): void
+    {
         self::_registryRegister($name, $block);
     }
 
@@ -62,14 +74,17 @@ final class ExtraVanillaBlocks{
      * @return Block[]
      * @phpstan-return array<string, Block>
      */
-    public static function getAll() : array{
+    public static function getAll(): array
+    {
         //phpstan doesn't support generic traits yet :(
         /** @var Block[] $result */
         $result = self::_registryGetAll();
         return $result;
     }
 
-    protected static function setup() : void{
+    protected static function setup(): void
+    {
+        $instanceTypeInfo = new BlockTypeInfo(BlockBreakInfo::instant());
         $indestructibleTypeInfo = new BlockTypeInfo(BlockBreakInfo::indestructible());
         self::register("command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), ImpulseCommandBlock::class), "Command Block", $indestructibleTypeInfo, CommandBlockType::IMPULSE()));
         self::register("repeating_command_block", new BlockCommand(new BlockIdentifier(BlockTypeIds::newId(), RepeatingCommandBlock::class), "Repeating Command Block", $indestructibleTypeInfo, CommandBlockType::REPEATING()));
@@ -86,5 +101,13 @@ final class ExtraVanillaBlocks{
         $reusableTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
         self::register("observer", new BlockObserver(new BlockIdentifier(BlockTypeIds::newId()), "Observer", $reusableTypeInfo));
         self::register("target", new BlockTarget(new BlockIdentifier(BlockTypeIds::newId()), "Target", $reusableTypeInfo));
+
+        $redstoneTypeInfo = new BlockTypeInfo(new BlockBreakInfo(3.5, BlockToolType::PICKAXE, ToolTier::WOOD()->getHarvestLevel()));
+        self::register("redstone", new BlockRedstone(new BlockIdentifier(BlockTypeIds::newId()), "Redstone", $redstoneTypeInfo));
+
+        self::register("redstone_wire", new BlockRedstoneWire(new BlockIdentifier(BlockTypeIds::newId()), "Redstone Wire", $instanceTypeInfo));
+        self::register("redstone_repeater", new BlockRedstoneRepeater(new BlockIdentifier(BlockTypeIds::newId()), "Redstone Repeater", $instanceTypeInfo));
+        self::register("redstone_comparator", new BlockRedstoneComparator(new BlockIdentifier(BlockTypeIds::newId()), "Redstone Comparator", $instanceTypeInfo));
+
     }
 }

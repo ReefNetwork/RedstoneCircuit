@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace tedo0627\redstonecircuit\block\transmission;
 
+use pocketmine\block\BlockTypeIds;
 use pocketmine\block\Cake;
 use pocketmine\block\EndPortalFrame;
 use pocketmine\block\ItemFrame;
@@ -14,6 +15,7 @@ use pocketmine\block\utils\RecordType;
 use pocketmine\inventory\CallbackInventoryListener;
 use pocketmine\inventory\Inventory;
 use pocketmine\item\Item;
+use pocketmine\item\ItemTypeIds;
 use pocketmine\math\Facing;
 use pocketmine\math\Vector3;
 use pocketmine\player\Player;
@@ -114,7 +116,7 @@ class BlockRedstoneComparator extends RedstoneComparator implements IRedstoneCom
                 $stack = 0;
                 for($slot = 0; $slot < $inventory->getSize(); $slot++){
                     $item = $inventory->getItem($slot);
-                    if($item->getId() === BlockLegacyIds::AIR) continue;
+                    if ($item->getTypeId() === ItemTypeIds::fromBlockTypeId(BlockTypeIds::AIR)) continue;
                     $stack += $item->getCount() / $item->getMaxStackSize();
                 }
                 $power = 1 + ($stack / $inventory->getSize()) * 14;

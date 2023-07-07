@@ -227,6 +227,11 @@ class RedstoneCircuit extends PluginBase{
         self::registerSimpleBlock(Ids::STICKY_PISTON, ExtraVanillaBlocks::STICKY_PISTON(), ["sticky_piston"]);
         self::registerSimpleBlock(Ids::OBSERVER, ExtraVanillaBlocks::OBSERVER(), ["observer"]);
         self::registerSimpleBlock(Ids::TARGET, ExtraVanillaBlocks::TARGET(), ["target"]);
+        self::registerSimpleBlock(Ids::REDSTONE_BLOCK, ExtraVanillaBlocks::REDSTONE(), ["redstone"]);
+        self::registerSimpleBlock(Ids::REDSTONE_WIRE, ExtraVanillaBlocks::REDSTONE_WIRE(), ["redstone_wire"]);
+        self::registerSimpleBlock(Ids::UNPOWERED_REPEATER,ExtraVanillaBlocks::REDSTONE_REPEATER(),["redstone_repeater"]);
+        self::registerSimpleBlock(Ids::UNPOWERED_COMPARATOR,ExtraVanillaBlocks::REDSTONE_COMPARATOR(),["redstone_comparator"]);
+
     }
 
     /**

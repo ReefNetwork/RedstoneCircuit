@@ -114,11 +114,6 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
     }
 
-    public function asItem(): Item
-    {
-        return ItemFactory::getInstance()->get($this->idInfo->getItemId(), 1);
-    }
-
     public function onRedstoneUpdate(): void
     {
         $this->getPosition()->getWorld()->scheduleDelayedBlockUpdate($this->getPosition(), 1);
@@ -200,7 +195,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 foreach ($resolver->getAttachBlocks() as $block) {
                     $attachSide = $block->getSide($face);
                     $this->addHideAttachedBlock($block);
-                    $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
+                    $moving = ExtraVanillaBlocks::MOVING_BLOCK();
                     $tile = $world->getTile($block->getPosition());
                     if ($tile instanceof IgnorePiston) $tile = null;
                     if ($moving instanceof BlockMoving) {
@@ -317,7 +312,7 @@ class BlockPiston extends Opaque implements IRedstoneComponent, ILinkRedstoneWir
                 foreach ($resolver->getAttachBlocks() as $block) {
                     $side = $block->getSide($face);
                     $this->addHideAttachedBlock($block);
-                    $moving = BlockFactory::getInstance()->get(Ids::MOVINGBLOCK, 0);
+                    $moving = ExtraVanillaBlocks::MOVING_BLOCK();
                     $tile = $world->getTile($block->getPosition());
                     if ($tile instanceof IgnorePiston) $tile = null;
                     if ($moving instanceof BlockMoving) {

@@ -13,7 +13,8 @@ use pocketmine\utils\Utils;
 use Webmozart\PathUtil\Path;
 use const pocketmine\BEDROCK_DATA_PATH;
 
-class BlockTable {
+class BlockTable
+{
     use SingletonTrait;
 
     /** @var array<int, string> */
@@ -26,13 +27,14 @@ class BlockTable {
     /** @var array<int, array<String, int>> */
     private array $idToStateToDamage = [];
 
-    public function __construct() {
+    public function __construct()
+    {
         $dir = dirname(__DIR__);
         if (!str_ends_with($dir, ".phar")) {
             $remove = "src" . DIRECTORY_SEPARATOR . "tedo0627" . DIRECTORY_SEPARATOR . "redstonecircuit";
-            $dir = mb_substr($dir, 0, - (strlen($remove)));
+            $dir = mb_substr($dir, 0, -(strlen($remove)));
         }
-        $dir = $dir . "resources" . DIRECTORY_SEPARATOR ."block_id_map.json";
+        $dir = $dir . "resources" . DIRECTORY_SEPARATOR . "block_id_map.json";
         $json = json_decode(file_get_contents($dir), true);
         foreach ($json as $name => $id) {
             // pistonArmCollision -> piston_arm_collision
@@ -49,7 +51,7 @@ class BlockTable {
             new PacketSerializerContext(GlobalItemTypeDictionary::getInstance()->getDictionary())
         );
         $nbtReader = new NetworkNbtSerializer();
-        while(!$legacyStateMapReader->feof()){
+        while (!$legacyStateMapReader->feof()) {
             $name = $legacyStateMapReader->getString();
             // pistonArmCollision -> piston_arm_collision
             if (str_contains(strtolower($name), "piston")) {
@@ -93,28 +95,34 @@ class BlockTable {
         }
     }
 
-    public function existsName(int $id): bool {
+    public function existsName(int $id): bool
+    {
         return array_key_exists($id, $this->idToName);
     }
 
-    public function getName(int $id): string {
+    public function getName(int $id): string
+    {
         return $this->idToName[$id];
     }
 
-    public function existsId(string $name): bool {
+    public function existsId(string $name): bool
+    {
         return array_key_exists($name, $this->nameToId);
     }
 
-    public function getId(string $name): int {
+    public function getId(string $name): int
+    {
         return $this->nameToId[$name];
     }
 
-    public function getStates(int $id, int $damage): CompoundTag {
+    public function getStates(int $id, int $damage): CompoundTag
+    {
         return $this->idToDamageToState[$id][$damage];
     }
 
-    public function getDamage(int $id, CompoundTag $states): int {
+    public function getDamage(int $id, CompoundTag $states): int
+    {
         $strStates = ltrim($states->toString(), "TAG_Compound=");
-        return $this->idToStateToDamage[$id][$strStates];
+        return $this->idToStateToDamage[$id][$strStates] ?? 0;
     }
 }
